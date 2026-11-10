@@ -74,6 +74,7 @@ func _ready() -> void:
 	_create_natural_rock_arches()
 	_create_highland_meadow_details()
 	_create_cliff_outcrops()
+	_create_highland_deadwood()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_river_bridge()
@@ -1679,3 +1680,46 @@ func _create_cliff_outcrops() -> void:
 
 	_add_multimesh("JaggedMountainCliffFaces", _rock_mesh, cliff_faces, _rock_material)
 	_add_multimesh("CliffBaseTalus", _rock_mesh, talus, _rock_material)
+
+
+
+func _create_highland_deadwood() -> void:
+	var trunk_mesh := CylinderMesh.new()
+	trunk_mesh.top_radius = 0.12
+	trunk_mesh.bottom_radius = 0.32
+	trunk_mesh.height = 1.0
+	trunk_mesh.radial_segments = 6
+	var snag_material := _make_bark_material(Color(0.25, 0.22, 0.17))
+	var branch_mesh := CylinderMesh.new()
+	branch_mesh.top_radius = 0.035
+	branch_mesh.bottom_radius = 0.12
+	branch_mesh.height = 1.0
+	branch_mesh.radial_segments = 5
+	var trunks: Array[Transform3D] = []
+	var branches: Array[Transform3D] = []
+	var attempts := 0
+	while trunks.size() < 42 and attempts < 2600:
+		attempts += 1
+		var x := _rng.randf_range(-470.0, 470.0)
+		var z := _rng.randf_range(-410.0, 410.0)
+		var ground := _height_at(x, z)
+		if ground < 30.0 or ground > 58.0 or _slope_at(x, z) > 1.2:
+			continue
+		if _near_river(x, z, 24.0) or _near_lake(x, z, 42.0) or _in_clearing(x, z):
+			continue
+		var height := _rng.randf_range(5.0, 9.0)
+		var radius := _rng.randf_range(0.55, 0.95)
+		var lean := _rng.randf_range(-0.18, 0.18)
+		var basis := Basis(Vector3.UP, _rng.randf_range(0.0, TAU)) * Basis(Vector3.RIGHT, lean)
+		basis = basis.scaled(Vector3(radius, height, radius))
+		trunks.append(Transform3D(basis, Vector3(x, ground + height * 0.42, z)))
+		for j in range(3):
+			var branch_height := ground + height * _rng.randf_range(0.58, 0.9)
+			var branch_angle := _rng.randf_range(0.0, TAU)
+			var branch_length := _rng.randf_range(1.1, 2.2)
+			var branch_basis := Basis(Vector3.UP, branch_angle) * Basis(Vector3.RIGHT, _rng.randf_range(0.75, 1.25))
+			branch_basis = branch_basis.scaled(Vector3(0.11, branch_length, 0.11))
+			branches.append(Transform3D(branch_basis, Vector3(x, branch_height, z)))
+
+	_add_multimesh("HighlandWeatheredSnags", trunk_mesh, trunks, snag_material)
+	_add_multimesh("BrokenSnagBranches", branch_mesh, branches, snag_material)
