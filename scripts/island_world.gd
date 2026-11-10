@@ -2068,7 +2068,7 @@ func _create_riverbank_woodland() -> void:
 		attempts += 1
 		var t := _rng.randf_range(0.035, 0.965)
 		var z: float = lerpf(-356.0, 410.0, t) + _rng.randf_range(-9.0, 9.0)
-		var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+		var river_x: float = lerpf(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
 		var side := -1.0 if _rng.randf() < 0.5 else 1.0
 		var x := river_x + side * _rng.randf_range(34.0, 54.0)
 		var ground := _height_at(x, z)
@@ -2096,7 +2096,7 @@ func _create_riverbank_woodland() -> void:
 	for i in range(1800):
 		var t := _rng.randf_range(0.025, 0.975)
 		var z: float = lerpf(-356.0, 410.0, t) + _rng.randf_range(-7.0, 7.0)
-		var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+		var river_x: float = lerpf(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
 		var side := -1.0 if _rng.randf() < 0.5 else 1.0
 		var x := river_x + side * _rng.randf_range(10.0, 27.0)
 		var ground := _height_at(x, z)
