@@ -62,6 +62,7 @@ func _ready() -> void:
 	_scatter_rocks_and_logs()
 	_create_coastal_and_mountain_details()
 	_create_beach_tide_pools_and_driftwood()
+	_create_mountain_streams_and_waterfalls()
 	_create_cave_system()
 	_create_coastal_camp()
 	_create_plane_wreck()
@@ -1200,3 +1201,125 @@ func _create_beach_tide_pools_and_driftwood() -> void:
 		pool.rotation_degrees.y = _rng.randf_range(0.0, 180.0)
 		pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(pool)
+
+
+
+func _create_mountain_streams_and_waterfalls() -> void:
+	var water_material := StandardMaterial3D.new()
+	water_material.albedo_color = Color(0.055, 0.24, 0.27, 0.82)
+	water_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	water_material.roughness = 0.2
+	water_material.metallic = 0.08
+	water_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var foam_material := StandardMaterial3D.new()
+	foam_material.albedo_color = Color(0.58, 0.72, 0.68, 0.68)
+	foam_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	foam_material.roughness = 0.3
+	foam_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	# Two narrow tributaries cut through the northern and central highlands.
+	var northern_route := PackedVector3Array([
+		Vector3(76.0, 0.0, -390.0),
+		Vector3(94.0, 0.0, -340.0),
+		Vector3(72.0, 0.0, -300.0),
+		Vector3(86.0, 0.0, -258.0),
+		Vector3(64.0, 0.0, -218.0)
+	])
+	var western_route := PackedVector3Array([
+		Vector3(-258.0, 0.0, -212.0),
+		Vector3(-218.0, 0.0, -178.0),
+		Vector3(-176.0, 0.0, -142.0),
+		Vector3(-132.0, 0.0, -112.0),
+		Vector3(-88.0, 0.0, -78.0)
+	])
+	_create_stream_ribbon("NorthernMountainTributary", northern_route, 2.8, water_material)
+	_create_stream_ribbon("WesternRidgeTributary", western_route, 2.1, water_material)
+
+	# Waterfall curtains are placed in narrow rocky cuts. Their vertical sheets
+	# are double-sided and use translucent material to remain visible on mobile.
+	_create_waterfall_curtain("NorthRidgeWaterfall", Vector3(86.0, 0.0, -258.0), 7.5, 5.0, water_material, foam_material)
+	_create_waterfall_curtain("WestRidgeCascade", Vector3(-176.0, 0.0, -142.0), 5.0, 3.8, water_material, foam_material)
+
+
+func _create_stream_ribbon(stream_name: String, route: PackedVector3Array, width: float, material: Material) -> void:
+	if route.size() < 2:
+		return
+	var vertices: Array[Vector3] = []
+	var indices := PackedInt32Array()
+	const STEPS_PER_SEGMENT := 18
+	for segment in range(route.size() - 1):
+		for step in range(STEPS_PER_SEGMENT + 1):
+			if segment > 0 and step == 0:
+				continue
+			var t := float(step) / float(STEPS_PER_SEGMENT)
+			var point := route[segment].lerp(route[segment + 1], t)
+			var previous := route[max(segment - 1, 0)].lerp(route[segment], max(t - 0.04, 0.0))
+			var next := route[min(segment + 2, route.size() - 1)].lerp(route[segment + 1], min(t + 0.04, 1.0))
+			var tangent := Vector2(next.x - previous.x, next.z - previous.z).normalized()
+			var side := Vector2(-tangent.y, tangent.x) * width * 0.5
+			var y := _height_at(point.x, point.z) + 0.24
+			vertices.append(Vector3(point.x + side.x, y, point.z + side.y))
+			vertices.append(Vector3(point.x - side.x, y, point.z - side.y))
+	for i in range((vertices.size() / 2) - 1):
+		var a := i * 2
+		indices.append_array(PackedInt32Array([a, a + 2, a + 1, a + 1, a + 2, a + 3]))
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for vertex in vertices:
+		surface.set_color(Color(0.78, 0.9, 0.86))
+		surface.add_vertex(vertex)
+	for index in indices:
+		surface.add_index(index)
+	surface.generate_normals()
+	var stream := MeshInstance3D.new()
+	stream.name = stream_name
+	stream.mesh = surface.commit()
+	stream.material_override = material
+	stream.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(stream)
+
+
+func _create_waterfall_curtain(fall_name: String, location: Vector3, drop: float, width: float, water_material: Material, foam_material: Material) -> void:
+	var x := location.x
+	var z := location.z
+	var upper_y := _height_at(x, z) + 0.45
+	var lower_y := upper_y - drop
+	var fall := MeshInstance3D.new()
+	fall.name = fall_name
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var left_top := Vector3(x - width * 0.5, upper_y, z)
+	var right_top := Vector3(x + width * 0.5, upper_y, z)
+	var left_bottom := Vector3(x - width * 0.5, lower_y, z + 0.35)
+	var right_bottom := Vector3(x + width * 0.5, lower_y, z + 0.35)
+	for vertex in [left_top, left_bottom, right_top, right_top, left_bottom, right_bottom]:
+		surface.set_color(Color(0.72, 0.88, 0.84, 0.82))
+		surface.add_vertex(vertex)
+	surface.generate_normals()
+	fall.mesh = surface.commit()
+	fall.material_override = water_material
+	fall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(fall)
+
+	var plunge_pool := MeshInstance3D.new()
+	plunge_pool.name = fall_name + "PlungePool"
+	var pool_mesh := PlaneMesh.new()
+	pool_mesh.size = Vector2(width * 2.8, width * 1.9)
+	plunge_pool.mesh = pool_mesh
+	plunge_pool.material_override = water_material
+	plunge_pool.position = Vector3(x, _height_at(x, z + 5.0) + 0.3, z + 5.0)
+	plunge_pool.rotation_degrees.y = 12.0
+	plunge_pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(plunge_pool)
+
+	var spray := MeshInstance3D.new()
+	spray.name = fall_name + "Mist"
+	var spray_mesh := PlaneMesh.new()
+	spray_mesh.size = Vector2(width * 1.7, drop * 0.8)
+	spray.mesh = spray_mesh
+	spray.material_override = foam_material
+	spray.position = Vector3(x, lower_y + drop * 0.35, z + 0.8)
+	spray.rotation_degrees.y = 90.0
+	spray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(spray)
