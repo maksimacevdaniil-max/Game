@@ -62,6 +62,8 @@ func _ready() -> void:
 	_create_swamp_region()
 	_create_abandoned_research_site()
 	_create_trails()
+	_create_river_bridge()
+	_create_forest_lookout()
 	_create_showcase_camera()
 
 
@@ -769,6 +771,70 @@ func _create_trail_segment(start: Vector3, finish: Vector3, width: float) -> voi
 	add_child(trail)
 
 
+
+func _create_river_bridge() -> void:
+	var bridge := Node3D.new()
+	bridge.name = "OldTimberRiverBridge"
+	var x := -186.0
+	var z := 217.0
+	bridge.position = Vector3(x, _height_at(x, z) + 2.4, z)
+	bridge.rotation.y = -0.16
+	add_child(bridge)
+
+	var aged_wood := StandardMaterial3D.new()
+	aged_wood.albedo_color = Color(0.23, 0.17, 0.11)
+	aged_wood.roughness = 0.98
+	var dark_wood := StandardMaterial3D.new()
+	dark_wood.albedo_color = Color(0.12, 0.105, 0.075)
+	dark_wood.roughness = 1.0
+
+	for i in range(13):
+		var plank_x := -12.0 + float(i) * 2.0
+		_add_box(bridge, Vector3(plank_x, 0.0, 0.0), Vector3(1.9, 0.42, 8.0), aged_wood)
+
+	for side in [-1.0, 1.0]:
+		for post_x in [-13.0, -6.5, 0.0, 6.5, 13.0]:
+			_add_box(bridge, Vector3(post_x, 1.35, side * 3.7), Vector3(0.42, 2.7, 0.42), dark_wood)
+		_add_box(bridge, Vector3(0.0, 2.45, side * 3.7), Vector3(28.0, 0.42, 0.42), aged_wood)
+
+	var support_mesh := CylinderMesh.new()
+	support_mesh.top_radius = 0.42
+	support_mesh.bottom_radius = 0.58
+	support_mesh.height = 5.5
+	support_mesh.radial_segments = 7
+	for side in [-1.0, 1.0]:
+		var support := MeshInstance3D.new()
+		support.mesh = support_mesh
+		support.material_override = dark_wood
+		support.position = Vector3(0.0, -2.2, side * 2.8)
+		bridge.add_child(support)
+
+
+func _create_forest_lookout() -> void:
+	var lookout := Node3D.new()
+	lookout.name = "RidgeLookoutPlatform"
+	var x := 130.0
+	var z := -284.0
+	lookout.position = Vector3(x, _height_at(x, z), z)
+	lookout.rotation.y = 0.35
+	add_child(lookout)
+
+	var timber := StandardMaterial3D.new()
+	timber.albedo_color = Color(0.24, 0.17, 0.11)
+	timber.roughness = 1.0
+	var roof_material := StandardMaterial3D.new()
+	roof_material.albedo_color = Color(0.17, 0.18, 0.15)
+	roof_material.roughness = 0.96
+
+	for px in [-2.6, 2.6]:
+		for pz in [-2.6, 2.6]:
+			_add_box(lookout, Vector3(px, 4.0, pz), Vector3(0.42, 8.0, 0.42), timber)
+	_add_box(lookout, Vector3(0.0, 7.8, 0.0), Vector3(7.0, 0.55, 7.0), timber)
+	_add_box(lookout, Vector3(0.0, 10.0, -0.2), Vector3(7.8, 0.42, 7.8), roof_material)
+	for side in [-1.0, 1.0]:
+		_add_box(lookout, Vector3(0.0, 8.8, side * 3.25), Vector3(6.5, 0.35, 0.3), timber)
+		_add_box(lookout, Vector3(side * 3.25, 8.8, 0.0), Vector3(0.3, 0.35, 6.5), timber)
+
 func _create_showcase_camera() -> void:
 	_camera = Camera3D.new()
 	_camera.name = "TemporaryIslandOverviewCamera"
@@ -831,5 +897,7 @@ func _in_clearing(x: float, z: float) -> bool:
 	var research := Vector2(328.0, -244.0)
 	var crash_site := Vector2(-500.0, 192.0)
 	var swamp := Vector2(420.0, 310.0)
+	var lookout := Vector2(130.0, -284.0)
+	var bridge := Vector2(-186.0, 217.0)
 	var point := Vector2(x, z)
-	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0
+	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0 or point.distance_to(lookout) < 25.0 or point.distance_to(bridge) < 24.0
