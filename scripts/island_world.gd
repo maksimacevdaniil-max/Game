@@ -1076,8 +1076,10 @@ func _in_clearing(x: float, z: float) -> bool:
 	var bridge := Vector2(-186.0, 217.0)
 	var cave_north := Vector2(-244.0, -150.0)
 	var cave_west := Vector2(-350.0, 0.0)
+	var north_arch := Vector2(-292.0, -250.0)
+	var east_arch := Vector2(278.0, 126.0)
 	var point := Vector2(x, z)
-	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0 or point.distance_to(lookout) < 25.0 or point.distance_to(bridge) < 24.0 or point.distance_to(cave_north) < 34.0 or point.distance_to(cave_west) < 32.0
+	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0 or point.distance_to(lookout) < 25.0 or point.distance_to(bridge) < 24.0 or point.distance_to(cave_north) < 34.0 or point.distance_to(cave_west) < 32.0 or point.distance_to(north_arch) < 34.0 or point.distance_to(east_arch) < 34.0
 
 
 
