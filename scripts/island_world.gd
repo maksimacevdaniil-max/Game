@@ -953,9 +953,66 @@ func _create_abandoned_research_site() -> void:
 
 
 func _create_trails() -> void:
+	# Main route from the southern camp through the central forest to the
+	# abandoned research station.
 	_create_trail_segment(Vector3(-416.0, 0.0, 304.0), Vector3(-160.0, 0.0, 116.0), 6.0)
 	_create_trail_segment(Vector3(-160.0, 0.0, 116.0), Vector3(80.0, 0.0, -56.0), 4.8)
 	_create_trail_segment(Vector3(80.0, 0.0, -56.0), Vector3(328.0, 0.0, -244.0), 4.4)
+
+	# Shorter branches connect the crash site, bridge, caves, lookout,
+	# western tarn and the eastern wetland into one walkable island network.
+	_create_trail_route(PackedVector3Array([
+		Vector3(-500.0, 0.0, 192.0),
+		Vector3(-462.0, 0.0, 246.0),
+		Vector3(-416.0, 0.0, 304.0)
+	]), 2.8)
+	_create_trail_route(PackedVector3Array([
+		Vector3(-416.0, 0.0, 304.0),
+		Vector3(-318.0, 0.0, 267.0),
+		Vector3(-246.0, 0.0, 235.0),
+		Vector3(-186.0, 0.0, 217.0)
+	]), 3.2)
+	_create_trail_route(PackedVector3Array([
+		Vector3(-186.0, 0.0, 217.0),
+		Vector3(-238.0, 0.0, 202.0),
+		Vector3(-300.0, 0.0, 180.0)
+	]), 2.7)
+	_create_trail_route(PackedVector3Array([
+		Vector3(-300.0, 0.0, 180.0),
+		Vector3(-326.0, 0.0, 98.0),
+		Vector3(-350.0, 0.0, 0.0)
+	]), 2.5)
+	_create_trail_route(PackedVector3Array([
+		Vector3(80.0, 0.0, -56.0),
+		Vector3(106.0, 0.0, -132.0),
+		Vector3(122.0, 0.0, -212.0),
+		Vector3(130.0, 0.0, -284.0)
+	]), 2.8)
+	_create_trail_route(PackedVector3Array([
+		Vector3(130.0, 0.0, -284.0),
+		Vector3(204.0, 0.0, -274.0),
+		Vector3(268.0, 0.0, -258.0),
+		Vector3(328.0, 0.0, -244.0)
+	]), 2.7)
+	_create_trail_route(PackedVector3Array([
+		Vector3(328.0, 0.0, -244.0),
+		Vector3(366.0, 0.0, -74.0),
+		Vector3(398.0, 0.0, 112.0),
+		Vector3(420.0, 0.0, 310.0)
+	]), 2.6)
+	_create_trail_route(PackedVector3Array([
+		Vector3(80.0, 0.0, -56.0),
+		Vector3(-26.0, 0.0, -86.0),
+		Vector3(-138.0, 0.0, -121.0),
+		Vector3(-244.0, 0.0, -150.0)
+	]), 2.5)
+
+
+func _create_trail_route(points: PackedVector3Array, width: float) -> void:
+	if points.size() < 2:
+		return
+	for i in range(points.size() - 1):
+		_create_trail_segment(points[i], points[i + 1], width)
 
 
 func _create_trail_segment(start: Vector3, finish: Vector3, width: float) -> void:
