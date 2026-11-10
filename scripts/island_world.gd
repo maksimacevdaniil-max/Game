@@ -70,6 +70,7 @@ func _ready() -> void:
 	_create_swamp_region()
 	_create_biome_groundcover()
 	_create_ravine_boulder_fields()
+	_create_natural_rock_arches()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_river_bridge()
@@ -1459,3 +1460,42 @@ func _create_ravine_boulder_fields() -> void:
 
 	_add_multimesh("RavineBoulderFields", _rock_mesh, boulders, _rock_material)
 	_add_multimesh("ExposedRavineRoots", root_mesh, exposed_roots, root_material)
+
+
+
+func _create_natural_rock_arches() -> void:
+	var arch_stones: Array[Transform3D] = []
+	var standing_stones: Array[Transform3D] = []
+	var arch_centers := [
+		Vector2(-292.0, -250.0),
+		Vector2(278.0, 126.0)
+	]
+	for center in arch_centers:
+		var ground := _height_at(center.x, center.y)
+		var span := _rng.randf_range(13.0, 17.0)
+		var height := _rng.randf_range(12.0, 16.0)
+		var stone_count := 13
+		for i in range(stone_count):
+			var angle := PI * float(i) / float(stone_count - 1)
+			var x := center.x + cos(angle) * span
+			var y := ground + 1.0 + sin(angle) * height
+			var z := center.y + sin(angle) * 2.4
+			var size := _rng.randf_range(2.4, 4.8)
+			var scale := Vector3(size * 0.72, size * 1.25, size * 0.8)
+			arch_stones.append(_make_transform(
+				Vector3(x, y, z),
+				_rng.randf_range(-0.22, 0.22),
+				scale
+			))
+		for side in [-1.0, 1.0]:
+			var pillar_x := center.x + side * span
+			var pillar_ground := _height_at(pillar_x, center.y)
+			var pillar_size := _rng.randf_range(3.0, 5.0)
+			standing_stones.append(_make_transform(
+				Vector3(pillar_x, pillar_ground + pillar_size * 1.15, center.y + _rng.randf_range(-2.0, 2.0)),
+				_rng.randf_range(-0.18, 0.18),
+				Vector3(pillar_size * 0.8, pillar_size * 2.4, pillar_size * 0.72)
+			))
+
+	_add_multimesh("NaturalStoneArchRings", _rock_mesh, arch_stones, _rock_material)
+	_add_multimesh("WeatheredStandingStones", _rock_mesh, standing_stones, _rock_material)
