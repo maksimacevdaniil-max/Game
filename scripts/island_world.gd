@@ -58,6 +58,8 @@ func _ready() -> void:
 	_scatter_rocks_and_logs()
 	_create_cave_system()
 	_create_coastal_camp()
+	_create_plane_wreck()
+	_create_swamp_region()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_showcase_camera()
@@ -572,6 +574,106 @@ func _create_coastal_camp() -> void:
 	fire_light.position = Vector3(7.0, 1.5, 1.0)
 	camp.add_child(fire_light)
 
+
+
+func _create_plane_wreck() -> void:
+	var wreck := Node3D.new()
+	wreck.name = "WreckedIslandAircraft"
+	var x := -250.0
+	var z := 96.0
+	wreck.position = Vector3(x, _height_at(x, z) + 1.1, z)
+	wreck.rotation.y = 0.42
+	add_child(wreck)
+
+	var faded_metal := StandardMaterial3D.new()
+	faded_metal.albedo_color = Color(0.34, 0.32, 0.27)
+	faded_metal.metallic = 0.42
+	faded_metal.roughness = 0.88
+	var dark_metal := StandardMaterial3D.new()
+	dark_metal.albedo_color = Color(0.12, 0.15, 0.14)
+	dark_metal.metallic = 0.35
+	dark_metal.roughness = 0.92
+	var glass := StandardMaterial3D.new()
+	glass.albedo_color = Color(0.075, 0.14, 0.15, 0.72)
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.roughness = 0.22
+
+	var fuselage_mesh := CylinderMesh.new()
+	fuselage_mesh.top_radius = 1.12
+	fuselage_mesh.bottom_radius = 1.12
+	fuselage_mesh.height = 22.0
+	fuselage_mesh.radial_segments = 12
+	var fuselage := MeshInstance3D.new()
+	fuselage.mesh = fuselage_mesh
+	fuselage.material_override = faded_metal
+	fuselage.rotation_degrees.z = 90.0
+	fuselage.position.y = 1.3
+	wreck.add_child(fuselage)
+
+	_add_box(wreck, Vector3(0.0, 1.4, 0.0), Vector3(3.0, 0.45, 25.0), dark_metal)
+	_add_box(wreck, Vector3(-1.0, 1.2, -9.0), Vector3(2.0, 0.22, 13.0), faded_metal)
+	_add_box(wreck, Vector3(-1.0, 1.2, 9.0), Vector3(2.0, 0.22, 8.0), faded_metal)
+	_add_box(wreck, Vector3(0.0, 4.1, -9.2), Vector3(0.55, 5.4, 2.2), faded_metal)
+	_add_box(wreck, Vector3(0.0, 2.8, 10.2), Vector3(0.5, 2.8, 3.8), dark_metal)
+	_add_box(wreck, Vector3(0.0, 2.5, -4.2), Vector3(2.3, 1.4, 0.22), glass)
+	_add_box(wreck, Vector3(0.0, 2.5, -1.4), Vector3(2.3, 1.4, 0.22), glass)
+
+
+func _create_swamp_region() -> void:
+	var swamp := Node3D.new()
+	swamp.name = "MistyLowlandSwamp"
+	add_child(swamp)
+	var mud := StandardMaterial3D.new()
+	mud.albedo_color = Color(0.105, 0.13, 0.095)
+	mud.roughness = 1.0
+	var pool_material := StandardMaterial3D.new()
+	pool_material.albedo_color = Color(0.025, 0.105, 0.095)
+	pool_material.roughness = 0.24
+
+	var center := Vector2(210.0, 155.0)
+	for i in range(7):
+		var offset := Vector2(_rng.randf_range(-28.0, 28.0), _rng.randf_range(-22.0, 22.0))
+		var point := center + offset
+		var ground := _height_at(point.x, point.y)
+		var pool_mesh := PlaneMesh.new()
+		pool_mesh.size = Vector2(_rng.randf_range(9.0, 19.0), _rng.randf_range(7.0, 15.0))
+		var pool := MeshInstance3D.new()
+		pool.mesh = pool_mesh
+		pool.material_override = pool_material
+		pool.position = Vector3(point.x, ground + 0.14, point.y)
+		pool.rotation_degrees.y = _rng.randf_range(-25.0, 25.0)
+		pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		swamp.add_child(pool)
+
+	var dead_wood := StandardMaterial3D.new()
+	dead_wood.albedo_color = Color(0.19, 0.17, 0.13)
+	dead_wood.roughness = 1.0
+	var dead_trunk_mesh := CylinderMesh.new()
+	dead_trunk_mesh.top_radius = 0.13
+	dead_trunk_mesh.bottom_radius = 0.42
+	dead_trunk_mesh.height = 9.0
+	dead_trunk_mesh.radial_segments = 6
+	for i in range(26):
+		var x := center.x + _rng.randf_range(-48.0, 48.0)
+		var z := center.y + _rng.randf_range(-38.0, 38.0)
+		var ground := _height_at(x, z)
+		var dead_tree := MeshInstance3D.new()
+		dead_tree.mesh = dead_trunk_mesh
+		dead_tree.material_override = dead_wood
+		dead_tree.position = Vector3(x, ground + 4.3, z)
+		dead_tree.rotation_degrees.z = _rng.randf_range(-13.0, 13.0)
+		dead_tree.rotation_degrees.x = _rng.randf_range(-10.0, 10.0)
+		swamp.add_child(dead_tree)
+
+	var swamp_fog := FogVolume.new()
+	swamp_fog.name = "LowSwampMist"
+	var fog_shape := SphereShape3D.new()
+	fog_shape.radius = 42.0
+	swamp_fog.shape = fog_shape
+	swamp_fog.material = FogMaterial.new()
+	swamp_fog.material.density = 0.025
+	swamp_fog.position = Vector3(center.x, _height_at(center.x, center.y) + 3.0, center.y)
+	swamp.add_child(swamp_fog)
 
 func _create_abandoned_research_site() -> void:
 	var site := Node3D.new()
