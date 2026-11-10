@@ -381,7 +381,7 @@ func _height_at(x: float, z: float) -> float:
 	var southern_hills := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var broad_hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	var fine_detail := _detail_noise.get_noise_2d(x, z) * 1.35
-	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin
+	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z)
 	return lerp(SEA_LEVEL - 0.8, elevation, land)
 
 
@@ -427,7 +427,18 @@ func _height_at_raw(x: float, z: float) -> float:
 	var west := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
 	var south := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
-	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin, land)
+	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin - _ravine_cut_at(x, z), land)
+
+
+
+func _ravine_cut_at(x: float, z: float) -> float:
+	# A winding erosion channel through the highlands creates a readable
+	# valley floor and steeper shoulders without breaking terrain continuity.
+	var ravine_center_x := -82.0 + sin(z * 0.0085) * 52.0
+	var north_gate := smoothstep(-350.0, -275.0, z)
+	var south_gate := 1.0 - smoothstep(170.0, 265.0, z)
+	var channel := exp(-pow((x - ravine_center_x) / 31.0, 2.0))
+	return 8.8 * channel * north_gate * south_gate
 
 
 func _create_ocean() -> void:
