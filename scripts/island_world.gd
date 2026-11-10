@@ -68,6 +68,7 @@ func _ready() -> void:
 	_create_plane_wreck()
 	_create_player_spawn_marker()
 	_create_swamp_region()
+	_create_biome_groundcover()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_river_bridge()
@@ -1334,3 +1335,73 @@ func _create_waterfall_curtain(fall_name: String, location: Vector3, drop: float
 	spray.rotation_degrees.y = 90.0
 	spray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(spray)
+
+
+
+func _create_biome_groundcover() -> void:
+	var fern_material := _make_pine_material(Color(0.075, 0.19, 0.095))
+	var fern_light_material := _make_pine_material(Color(0.13, 0.25, 0.12))
+	var reed_material := StandardMaterial3D.new()
+	reed_material.albedo_color = Color(0.28, 0.31, 0.16)
+	reed_material.roughness = 1.0
+	var dead_reed_material := StandardMaterial3D.new()
+	dead_reed_material.albedo_color = Color(0.31, 0.27, 0.17)
+	dead_reed_material.roughness = 1.0
+
+	var fern_mesh := ConeMesh.new()
+	fern_mesh.bottom_radius = 0.34
+	fern_mesh.top_radius = 0.015
+	fern_mesh.height = 1.15
+	fern_mesh.radial_segments = 5
+	var reed_mesh := CylinderMesh.new()
+	reed_mesh.top_radius = 0.035
+	reed_mesh.bottom_radius = 0.075
+	reed_mesh.height = 1.8
+	reed_mesh.radial_segments = 4
+	var dead_reed_mesh := CylinderMesh.new()
+	dead_reed_mesh.top_radius = 0.025
+	dead_reed_mesh.bottom_radius = 0.065
+	dead_reed_mesh.height = 1.25
+	dead_reed_mesh.radial_segments = 4
+
+	var ferns: Array[Transform3D] = []
+	var light_ferns: Array[Transform3D] = []
+	var reeds: Array[Transform3D] = []
+	var dead_reeds: Array[Transform3D] = []
+	var attempts := 0
+	while ferns.size() + light_ferns.size() < 1150 and attempts < 9500:
+		attempts += 1
+		var x := _rng.randf_range(-ISLAND_RX * 0.94, ISLAND_RX * 0.94)
+		var z := _rng.randf_range(-ISLAND_RZ * 0.94, ISLAND_RZ * 0.94)
+		var ground := _height_at(x, z)
+		if ground < 1.0 or ground > 24.0 or _slope_at(x, z) > 1.35:
+			continue
+		if _near_river(x, z, 20.0) or _near_lake(x, z, 38.0):
+			continue
+		if _in_clearing(x, z):
+			continue
+		var size := _rng.randf_range(0.65, 1.45)
+		var transform := _make_transform(Vector3(x, ground + 0.52 * size, z), _rng.randf_range(0.0, TAU), Vector3(size, size, size))
+		if _rng.randf() < 0.72:
+			ferns.append(transform)
+		else:
+			light_ferns.append(transform)
+
+	# Dense wetland reeds frame the swamp pools and low river banks.
+	for i in range(620):
+		var x := 420.0 + _rng.randf_range(-104.0, 104.0)
+		var z := 310.0 + _rng.randf_range(-88.0, 88.0)
+		var ground := _height_at(x, z)
+		if ground < 0.0 or ground > 8.0:
+			continue
+		var height_scale := _rng.randf_range(0.65, 1.55)
+		var rotation := _rng.randf_range(0.0, TAU)
+		var base := Vector3(x, ground + 0.78 * height_scale, z)
+		reeds.append(_make_transform(base, rotation, Vector3.ONE * height_scale))
+		if _rng.randf() < 0.3:
+			dead_reeds.append(_make_transform(base + Vector3(0.2, -0.18, 0.1), rotation + 0.7, Vector3.ONE * height_scale * 0.8))
+
+	_add_multimesh("ForestFernGroundcover", fern_mesh, ferns, fern_material)
+	_add_multimesh("SunlitFernGroundcover", fern_mesh, light_ferns, fern_light_material)
+	_add_multimesh("SwampReedBeds", reed_mesh, reeds, reed_material)
+	_add_multimesh("DrySwampReeds", dead_reed_mesh, dead_reeds, dead_reed_material)
