@@ -106,7 +106,7 @@ func _process(delta: float) -> void:
 
 func _advance_day_cycle(delta: float) -> void:
 	_day_clock = fposmod(_day_clock + delta * 0.0011, 1.0)
-	var daylight := max(sin(TAU * _day_clock), 0.0)
+	var daylight: float = maxf(sin(TAU * _day_clock), 0.0)
 	if is_instance_valid(_sun):
 		_sun.rotation_degrees.x = -90.0 - cos(TAU * _day_clock) * 80.0
 		_sun.light_energy = lerp(0.025, 1.22, daylight)
@@ -394,9 +394,9 @@ func _height_at(x: float, z: float) -> float:
 	var north_peak := 34.0 * exp(-pow((x - 130.0) / 156.0, 2.0) - pow((z + 284.0) / 116.0, 2.0))
 	var west_ridge := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
 	var southern_hills := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
-	var broad_hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
+	var broad_hills: float = maxf(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	var fine_detail := _detail_noise.get_noise_2d(x, z) * 1.35
-	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z)
+	var elevation: float = 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z)
 	return lerp(SEA_LEVEL - 0.8, elevation, land)
 
 
@@ -409,7 +409,7 @@ func _terrain_color(x: float, z: float, height: float, slope: float) -> Color:
 	var high_stone := Color(0.235, 0.255, 0.25)
 
 	if height < 2.1:
-		var beach_mix := clamp((height + 1.4) / 3.5, 0.0, 1.0)
+		var beach_mix: float = clampf((height + 1.4) / 3.5, 0.0, 1.0)
 		return sand.lerp(grass, beach_mix)
 	var color := dark_grass.lerp(grass, clamp((height - 2.0) / 12.0, 0.0, 1.0))
 	if height > 16.0 or slope > 1.75:
@@ -427,7 +427,7 @@ func _terrain_color(x: float, z: float, height: float, slope: float) -> Color:
 	var wet_mud := Color(0.075, 0.105, 0.075)
 	final_color = final_color.lerp(wet_mud, wetland_mask * 0.78)
 	var ravine_center_x := -82.0 + sin(z * 0.0085) * 52.0
-	var ravine_distance := abs(x - ravine_center_x)
+	var ravine_distance: float = absf(x - ravine_center_x)
 	var ravine_mask := (1.0 - smoothstep(15.0, 48.0, ravine_distance)) * (1.0 - smoothstep(18.0, 34.0, height))
 	final_color = final_color.lerp(Color(0.22, 0.235, 0.22), ravine_mask * 0.62)
 	return final_color
@@ -450,7 +450,7 @@ func _height_at_raw(x: float, z: float) -> float:
 	var north := 34.0 * exp(-pow((x - 130.0) / 156.0, 2.0) - pow((z + 284.0) / 116.0, 2.0))
 	var west := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
 	var south := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
-	var hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
+	var hills: float = maxf(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z), land)
 
 
@@ -500,15 +500,15 @@ func _create_river() -> void:
 	const SEGMENTS := 100
 	for i in range(SEGMENTS + 1):
 		var t := float(i) / float(SEGMENTS)
-		var x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
-		var z := lerp(-356.0, 410.0, t)
-		var next_t := min(t + 0.008, 1.0)
-		var nx := lerp(110.0, -330.0, next_t) + sin(next_t * PI * 3.0) * 48.0
-		var nz := lerp(-356.0, 410.0, next_t)
+		var x: float = lerpf(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+		var z: float = lerpf(-356.0, 410.0, t)
+		var next_t: float = minf(t + 0.008, 1.0)
+		var nx: float = lerpf(110.0, -330.0, next_t) + sin(next_t * PI * 3.0) * 48.0
+		var nz: float = lerpf(-356.0, 410.0, next_t)
 		var tangent := Vector2(nx - x, nz - z).normalized()
 		var side := Vector2(-tangent.y, tangent.x)
-		var width := lerp(10.4, 3.2, t)
-		var y := _height_at(x, z) + 0.12
+		var width: float = lerpf(10.4, 3.2, t)
+		var y: float = _height_at(x, z) + 0.12
 		left.append(Vector3(x + side.x * width, y, z + side.y * width))
 		right.append(Vector3(x - side.x * width, y, z - side.y * width))
 
@@ -546,17 +546,17 @@ func _scatter_conifer_forest() -> void:
 	trunk_mesh.height = 13.0
 	trunk_mesh.radial_segments = 7
 
-	var low_cone := ConeMesh.new()
+	var low_cone := CylinderMesh.new()
 	low_cone.bottom_radius = 4.3
 	low_cone.top_radius = 0.0
 	low_cone.height = 10.5
 	low_cone.radial_segments = 7
-	var mid_cone := ConeMesh.new()
+	var mid_cone := CylinderMesh.new()
 	mid_cone.bottom_radius = 3.25
 	mid_cone.top_radius = 0.0
 	mid_cone.height = 9.0
 	mid_cone.radial_segments = 7
-	var top_cone := ConeMesh.new()
+	var top_cone := CylinderMesh.new()
 	top_cone.bottom_radius = 2.15
 	top_cone.top_radius = 0.0
 	top_cone.height = 7.5
@@ -735,7 +735,7 @@ func _create_cave_entrance(location: Vector3, cave_name: String, size: float) ->
 	for i in range(4):
 		var tooth := MeshInstance3D.new()
 		tooth.name = "CaveCeilingStalactite_%02d" % i
-		var tooth_mesh := ConeMesh.new()
+		var tooth_mesh := CylinderMesh.new()
 		tooth_mesh.top_radius = 0.04
 		tooth_mesh.bottom_radius = _rng.randf_range(0.24, 0.48)
 		tooth_mesh.height = _rng.randf_range(1.2, 2.8)
@@ -1167,8 +1167,8 @@ func _add_box(parent: Node3D, position: Vector3, size: Vector3, material: Materi
 
 
 func _near_river(x: float, z: float, radius: float) -> bool:
-	var t := clamp((z + 356.0) / 766.0, 0.0, 1.0)
-	var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+	var t: float = clampf((z + 356.0) / 766.0, 0.0, 1.0)
+	var river_x: float = lerpf(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
 	return Vector2(x - river_x, 0.0).length() < radius
 
 
@@ -1473,7 +1473,7 @@ func _create_biome_groundcover() -> void:
 	dead_reed_material.albedo_color = Color(0.31, 0.27, 0.17)
 	dead_reed_material.roughness = 1.0
 
-	var fern_mesh := ConeMesh.new()
+	var fern_mesh := CylinderMesh.new()
 	fern_mesh.bottom_radius = 0.34
 	fern_mesh.top_radius = 0.015
 	fern_mesh.height = 1.15
@@ -1580,7 +1580,7 @@ func _create_ravine_boulder_fields() -> void:
 func _create_natural_rock_arches() -> void:
 	var arch_stones: Array[Transform3D] = []
 	var standing_stones: Array[Transform3D] = []
-	var arch_centers := [
+	var arch_centers: Array[Vector2] = [
 		Vector2(-292.0, -250.0),
 		Vector2(278.0, 126.0)
 	]
@@ -1667,7 +1667,7 @@ func _create_highland_meadow_details() -> void:
 
 func _create_stream_bank_gravel() -> void:
 	var gravel: Array[Transform3D] = []
-	var routes := [
+	var routes: Array[PackedVector3Array] = [
 		PackedVector3Array([
 			Vector3(76.0, 0.0, -390.0),
 			Vector3(94.0, 0.0, -340.0),
@@ -1685,17 +1685,17 @@ func _create_stream_bank_gravel() -> void:
 	]
 	for route in routes:
 		for segment in range(route.size() - 1):
-			var start := route[segment]
-			var finish := route[segment + 1]
+			var start: Vector3 = route[segment]
+			var finish: Vector3 = route[segment + 1]
 			var direction := Vector2(finish.x - start.x, finish.z - start.z).normalized()
 			var side := Vector2(-direction.y, direction.x)
 			for step in range(32):
 				var t := (float(step) + _rng.randf()) / 32.0
-				var center := start.lerp(finish, t)
+				var center: Vector3 = start.lerp(finish, t)
 				for bank_side in [-1.0, 1.0]:
-					var offset := _rng.randf_range(2.0, 6.5) * bank_side
-					var x := center.x + side.x * offset
-					var z := center.z + side.y * offset
+					var offset: float = _rng.randf_range(2.0, 6.5) * bank_side
+					var x: float = center.x + side.x * offset
+					var z: float = center.z + side.y * offset
 					var ground := _height_at(x, z)
 					if ground < 1.0 or ground > 54.0:
 						continue
@@ -1849,7 +1849,7 @@ func _create_swamp_surface_details() -> void:
 	var lily_material := StandardMaterial3D.new()
 	lily_material.albedo_color = Color(0.13, 0.22, 0.105)
 	lily_material.roughness = 0.82
-	var root_mesh := ConeMesh.new()
+	var root_mesh := CylinderMesh.new()
 	root_mesh.top_radius = 0.035
 	root_mesh.bottom_radius = 0.19
 	root_mesh.height = 1.0
@@ -2067,7 +2067,7 @@ func _create_riverbank_woodland() -> void:
 	while trunks.size() < 48 and attempts < 5200:
 		attempts += 1
 		var t := _rng.randf_range(0.035, 0.965)
-		var z := lerp(-356.0, 410.0, t) + _rng.randf_range(-9.0, 9.0)
+		var z: float = lerpf(-356.0, 410.0, t) + _rng.randf_range(-9.0, 9.0)
 		var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
 		var side := -1.0 if _rng.randf() < 0.5 else 1.0
 		var x := river_x + side * _rng.randf_range(34.0, 54.0)
@@ -2095,7 +2095,7 @@ func _create_riverbank_woodland() -> void:
 
 	for i in range(1800):
 		var t := _rng.randf_range(0.025, 0.975)
-		var z := lerp(-356.0, 410.0, t) + _rng.randf_range(-7.0, 7.0)
+		var z: float = lerpf(-356.0, 410.0, t) + _rng.randf_range(-7.0, 7.0)
 		var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
 		var side := -1.0 if _rng.randf() < 0.5 else 1.0
 		var x := river_x + side * _rng.randf_range(10.0, 27.0)
