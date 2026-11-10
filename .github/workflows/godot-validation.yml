@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -26,3 +29,30 @@ jobs:
 
       - name: Launch main island scene headlessly
         run: godot --headless --path . --quit-after 5
+
+      - name: Install screenshot dependencies
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+
+      - name: Capture real in-engine map screenshots
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          MAP_CAPTURE_FOCUS: "-300,12,180"
+        run: |
+          xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://scripts/capture_map.gd
+          test -s previews/island-overview.jpg
+          test -s previews/island-detail.jpg
+
+      - name: Publish map screenshots to repository
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add previews/island-overview.jpg previews/island-detail.jpg
+          if ! git diff --cached --quiet; then
+            git commit -m "[skip ci] Refresh in-engine island screenshots"
+            git push
+          fi
