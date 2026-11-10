@@ -59,6 +59,7 @@ func _ready() -> void:
 	_create_western_tarn_shoreline()
 	_create_western_tarn_grove()
 	_create_river()
+	_create_riverbank_woodland()
 	_scatter_conifer_forest()
 	_scatter_broadleaf_trees()
 	_scatter_understory()
@@ -574,7 +575,7 @@ func _scatter_conifer_forest() -> void:
 		var height := _height_at(x, z)
 		if height < 2.0 or height > 30.0 or _slope_at(x, z) > 1.35:
 			continue
-		if _near_river(x, z, 26.0) or _near_lake(x, z, 56.0):
+		if _near_river(x, z, 44.0) or _near_lake(x, z, 56.0):
 			continue
 		if _in_clearing(x, z):
 			continue
@@ -619,7 +620,7 @@ func _scatter_broadleaf_trees() -> void:
 		var height := _height_at(x, z)
 		if height < 2.0 or height > 16.0 or _slope_at(x, z) > 1.05:
 			continue
-		if _near_river(x, z, 22.0) or _near_lake(x, z, 44.0) or _in_clearing(x, z):
+		if _near_river(x, z, 40.0) or _near_lake(x, z, 44.0) or _in_clearing(x, z):
 			continue
 		var scale := _rng.randf_range(0.8, 1.35)
 		trunks.append(_make_transform(Vector3(x, height + 4.5 * scale, z), 0.0, Vector3.ONE * scale))
@@ -639,7 +640,7 @@ func _scatter_understory() -> void:
 		var height := _height_at(x, z)
 		if height < 1.7 or height > 22.0 or _slope_at(x, z) > 1.6:
 			continue
-		if _near_river(x, z, 16.0) or _near_lake(x, z, 32.0):
+		if _near_river(x, z, 34.0) or _near_lake(x, z, 32.0):
 			continue
 		if _rng.randf() < 0.32:
 			var s := _rng.randf_range(0.8, 1.65)
@@ -1975,3 +1976,83 @@ func _create_western_tarn_grove() -> void:
 	_add_multimesh("WesternTarnBirchCanopies", crown_mesh, crowns, crown_material)
 	_add_multimesh("WesternTarnBirchUpperCanopies", crown_mesh, secondary_crowns, crown_material)
 	_add_multimesh("WesternTarnShoreSedges", understory_mesh, sedges, understory_material)
+
+
+
+func _create_riverbank_woodland() -> void:
+	var alder_trunk_mesh := CylinderMesh.new()
+	alder_trunk_mesh.top_radius = 0.17
+	alder_trunk_mesh.bottom_radius = 0.31
+	alder_trunk_mesh.height = 9.5
+	alder_trunk_mesh.radial_segments = 7
+	var alder_bark := _make_bark_material(Color(0.22, 0.16, 0.115))
+
+	var canopy_mesh := SphereMesh.new()
+	canopy_mesh.radius = 1.0
+	canopy_mesh.height = 2.0
+	canopy_mesh.radial_segments = 8
+	canopy_mesh.rings = 5
+	var canopy_material := _make_pine_material(Color(0.12, 0.205, 0.12))
+	var sedge_mesh := CylinderMesh.new()
+	sedge_mesh.top_radius = 0.018
+	sedge_mesh.bottom_radius = 0.09
+	sedge_mesh.height = 0.95
+	sedge_mesh.radial_segments = 4
+	var sedge_material := _make_pine_material(Color(0.22, 0.285, 0.15))
+
+	var trunks: Array[Transform3D] = []
+	var crowns: Array[Transform3D] = []
+	var side_crowns: Array[Transform3D] = []
+	var sedges: Array[Transform3D] = []
+	var attempts := 0
+	while trunks.size() < 48 and attempts < 5200:
+		attempts += 1
+		var t := _rng.randf_range(0.035, 0.965)
+		var z := lerp(-356.0, 410.0, t) + _rng.randf_range(-9.0, 9.0)
+		var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+		var side := -1.0 if _rng.randf() < 0.5 else 1.0
+		var x := river_x + side * _rng.randf_range(34.0, 54.0)
+		var ground := _height_at(x, z)
+		if ground < 1.5 or ground > 29.0 or _slope_at(x, z) > 1.2:
+			continue
+		if _near_lake(x, z, 46.0) or _in_clearing(x, z):
+			continue
+		var scale := _rng.randf_range(0.82, 1.24)
+		trunks.append(_make_transform(
+			Vector3(x, ground + 4.75 * scale, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3.ONE * scale
+		))
+		crowns.append(_make_transform(
+			Vector3(x, ground + 9.3 * scale, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(3.2, 2.7, 3.0) * scale
+		))
+		side_crowns.append(_make_transform(
+			Vector3(x + _rng.randf_range(-1.25, 1.25), ground + 10.0 * scale, z + _rng.randf_range(-1.2, 1.2)),
+			_rng.randf_range(0.0, TAU),
+			Vector3(2.2, 1.9, 2.3) * scale
+		))
+
+	for i in range(1800):
+		var t := _rng.randf_range(0.025, 0.975)
+		var z := lerp(-356.0, 410.0, t) + _rng.randf_range(-7.0, 7.0)
+		var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+		var side := -1.0 if _rng.randf() < 0.5 else 1.0
+		var x := river_x + side * _rng.randf_range(10.0, 27.0)
+		var ground := _height_at(x, z)
+		if ground < 0.2 or ground > 20.0 or _slope_at(x, z) > 1.45:
+			continue
+		if _in_clearing(x, z) or _near_lake(x, z, 24.0):
+			continue
+		var size := _rng.randf_range(0.7, 1.45)
+		sedges.append(_make_transform(
+			Vector3(x, ground + 0.46 * size, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3.ONE * size
+		))
+
+	_add_multimesh("RiverbankAlderTrunks", alder_trunk_mesh, trunks, alder_bark)
+	_add_multimesh("RiverbankAlderCanopies", canopy_mesh, crowns, canopy_material)
+	_add_multimesh("RiverbankAlderSideCanopies", canopy_mesh, side_crowns, canopy_material)
+	_add_multimesh("RiverbankSedgeGrass", sedge_mesh, sedges, sedge_material)
