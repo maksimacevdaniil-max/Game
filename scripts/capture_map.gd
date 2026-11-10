@@ -21,6 +21,19 @@ func _capture_map() -> void:
 	root.add_child(island)
 	# Freeze the showcase orbit so every screenshot is repeatable.
 	island.set_process(false)
+	# Keep the game's atmospheric fog at runtime, but temporarily remove it
+	# from documentation captures so the whole island remains readable.
+	var capture_environment := island.get("_world_environment") as Environment
+	if capture_environment != null:
+		capture_environment.fog_enabled = false
+		capture_environment.ambient_light_energy = 0.95
+	var capture_sun := island.get("_sun") as DirectionalLight3D
+	if capture_sun != null:
+		capture_sun.light_energy = 1.35
+	var capture_sky := island.get("_sky_material") as ProceduralSkyMaterial
+	if capture_sky != null:
+		capture_sky.sky_top_color = Color(0.035, 0.075, 0.12)
+		capture_sky.sky_horizon_color = Color(0.34, 0.47, 0.53)
 
 	# The island is procedurally generated in _ready(). Wait for the renderer
 	# to submit several frames before reading the viewport texture.
@@ -34,9 +47,10 @@ func _capture_map() -> void:
 		return
 
 	camera.current = true
-	camera.fov = 54.0
-	camera.position = Vector3(720.0, 504.0, 680.0)
-	camera.look_at(Vector3(0.0, 8.0, 0.0), Vector3.UP)
+	camera.fov = 48.0
+	camera.far = 2200.0
+	camera.position = Vector3(760.0, 980.0, 760.0)
+	camera.look_at(Vector3(0.0, 6.0, 0.0), Vector3.UP)
 	await process_frame
 	var overview_error := _save_viewport(OVERVIEW_FILE)
 	if overview_error != OK:
@@ -49,8 +63,8 @@ func _capture_map() -> void:
 		var parts := focus_raw.split(",")
 		if parts.size() == 3:
 			var focus := Vector3(parts[0].to_float(), parts[1].to_float(), parts[2].to_float())
-			camera.fov = 58.0
-			camera.position = focus + Vector3(105.0, 82.0, 112.0)
+			camera.fov = 50.0
+			camera.position = focus + Vector3(92.0, 72.0, 104.0)
 			camera.look_at(focus, Vector3.UP)
 			for frame in range(3):
 				await process_frame
