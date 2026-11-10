@@ -1154,11 +1154,9 @@ func _create_beach_tide_pools_and_driftwood() -> void:
 			continue
 		var length := _rng.randf_range(3.0, 10.0)
 		var rotation := _rng.randf_range(0.0, TAU)
-		driftwood.append(_make_transform(
-			Vector3(x, ground + 0.18, z),
-			rotation,
-			Vector3(0.42, 0.42, length)
-		))
+		var log_basis := Basis(Vector3.UP, rotation) * Basis(Vector3.RIGHT, PI * 0.5)
+		log_basis = log_basis.scaled(Vector3(0.42, length, 0.42))
+		driftwood.append(Transform3D(log_basis, Vector3(x, ground + 0.22, z)))
 
 	for i in range(95):
 		var angle := _rng.randf_range(0.0, TAU)
