@@ -69,6 +69,7 @@ func _ready() -> void:
 	_create_player_spawn_marker()
 	_create_swamp_region()
 	_create_biome_groundcover()
+	_create_ravine_boulder_fields()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_river_bridge()
@@ -1414,3 +1415,47 @@ func _create_biome_groundcover() -> void:
 	_add_multimesh("SunlitFernGroundcover", fern_mesh, light_ferns, fern_light_material)
 	_add_multimesh("SwampReedBeds", reed_mesh, reeds, reed_material)
 	_add_multimesh("DrySwampReeds", dead_reed_mesh, dead_reeds, dead_reed_material)
+
+
+
+func _create_ravine_boulder_fields() -> void:
+	var boulders: Array[Transform3D] = []
+	var exposed_roots: Array[Transform3D] = []
+	var root_mesh := CylinderMesh.new()
+	root_mesh.top_radius = 0.11
+	root_mesh.bottom_radius = 0.2
+	root_mesh.height = 1.0
+	root_mesh.radial_segments = 5
+	var root_material := _make_bark_material(Color(0.16, 0.12, 0.085))
+
+	for i in range(420):
+		var z := _rng.randf_range(-270.0, 185.0)
+		var center_x := -82.0 + sin(z * 0.0085) * 52.0
+		var side := -1.0 if _rng.randf() < 0.5 else 1.0
+		var x := center_x + side * _rng.randf_range(14.0, 58.0)
+		var ground := _height_at(x, z)
+		if ground < 2.0 or ground > 42.0:
+			continue
+		var size := _rng.randf_range(0.8, 4.8)
+		boulders.append(_make_transform(
+			Vector3(x, ground + size * 0.26, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(1.0, 1.7), size * 0.78, size)
+		))
+
+	for i in range(105):
+		var z := _rng.randf_range(-255.0, 150.0)
+		var center_x := -82.0 + sin(z * 0.0085) * 52.0
+		var side := -1.0 if _rng.randf() < 0.5 else 1.0
+		var x := center_x + side * _rng.randf_range(28.0, 72.0)
+		var ground := _height_at(x, z)
+		if ground < 3.0 or ground > 30.0:
+			continue
+		var length := _rng.randf_range(2.5, 7.0)
+		var angle := _rng.randf_range(0.0, TAU)
+		var root_basis := Basis(Vector3.UP, angle) * Basis(Vector3.RIGHT, PI * 0.5)
+		root_basis = root_basis.scaled(Vector3(0.2, length, 0.2))
+		exposed_roots.append(Transform3D(root_basis, Vector3(x, ground + 0.2, z)))
+
+	_add_multimesh("RavineBoulderFields", _rock_mesh, boulders, _rock_material)
+	_add_multimesh("ExposedRavineRoots", root_mesh, exposed_roots, root_material)
