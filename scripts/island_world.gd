@@ -69,6 +69,7 @@ func _ready() -> void:
 	_create_plane_wreck()
 	_create_player_spawn_marker()
 	_create_swamp_region()
+	_create_swamp_water_channels()
 	_create_biome_groundcover()
 	_create_ravine_boulder_fields()
 	_create_natural_rock_arches()
@@ -1723,3 +1724,51 @@ func _create_highland_deadwood() -> void:
 
 	_add_multimesh("HighlandWeatheredSnags", trunk_mesh, trunks, snag_material)
 	_add_multimesh("BrokenSnagBranches", branch_mesh, branches, snag_material)
+
+
+
+func _create_swamp_water_channels() -> void:
+	var channel_material := StandardMaterial3D.new()
+	channel_material.albedo_color = Color(0.035, 0.105, 0.085, 0.86)
+	channel_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	channel_material.roughness = 0.18
+	channel_material.metallic = 0.04
+	channel_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var western_channel := PackedVector3Array([
+		Vector3(334.0, 0.0, 264.0),
+		Vector3(362.0, 0.0, 282.0),
+		Vector3(391.0, 0.0, 300.0),
+		Vector3(420.0, 0.0, 310.0)
+	])
+	var eastern_channel := PackedVector3Array([
+		Vector3(420.0, 0.0, 310.0),
+		Vector3(448.0, 0.0, 325.0),
+		Vector3(478.0, 0.0, 347.0),
+		Vector3(505.0, 0.0, 369.0)
+	])
+	var southern_channel := PackedVector3Array([
+		Vector3(388.0, 0.0, 365.0),
+		Vector3(402.0, 0.0, 340.0),
+		Vector3(420.0, 0.0, 310.0),
+		Vector3(434.0, 0.0, 284.0)
+	])
+	_create_stream_ribbon("SwampWesternWaterChannel", western_channel, 3.8, channel_material)
+	_create_stream_ribbon("SwampEasternWaterChannel", eastern_channel, 2.7, channel_material)
+	_create_stream_ribbon("SwampSouthernWaterChannel", southern_channel, 2.3, channel_material)
+
+	var bank_stones: Array[Transform3D] = []
+	for i in range(260):
+		var x := 420.0 + _rng.randf_range(-112.0, 112.0)
+		var z := 310.0 + _rng.randf_range(-88.0, 88.0)
+		if _height_at(x, z) < 0.0 or _height_at(x, z) > 9.0:
+			continue
+		if _near_river(x, z, 12.0):
+			continue
+		var size := _rng.randf_range(0.18, 0.62)
+		bank_stones.append(_make_transform(
+			Vector3(x, _height_at(x, z) + size * 0.3, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * 1.8, size * 0.6, size)
+		))
+	_add_multimesh("SwampWaterlineStones", _rock_mesh, bank_stones, _rock_material)
