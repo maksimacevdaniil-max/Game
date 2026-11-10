@@ -60,6 +60,7 @@ func _ready() -> void:
 	_scatter_broadleaf_trees()
 	_scatter_understory()
 	_scatter_rocks_and_logs()
+	_create_coastal_and_mountain_details()
 	_create_cave_system()
 	_create_coastal_camp()
 	_create_plane_wreck()
@@ -1052,3 +1053,63 @@ func _in_clearing(x: float, z: float) -> bool:
 	var cave_west := Vector2(-350.0, 0.0)
 	var point := Vector2(x, z)
 	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0 or point.distance_to(lookout) < 25.0 or point.distance_to(bridge) < 24.0 or point.distance_to(cave_north) < 34.0 or point.distance_to(cave_west) < 32.0
+
+
+
+func _create_coastal_and_mountain_details() -> void:
+	# Break up the island's silhouette with layered rock shelves and scattered
+	# boulders. All placements are deterministic and use the shared MultiMesh.
+	var shoreline_rocks: Array[Transform3D] = []
+	var ridge_rocks: Array[Transform3D] = []
+	var scree: Array[Transform3D] = []
+
+	for i in range(520):
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.865, 1.035)
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var ground := _height_at(x, z)
+		if ground < SEA_LEVEL - 0.4 or ground > 15.0:
+			continue
+		var size := _rng.randf_range(1.2, 7.2)
+		var stretch := _rng.randf_range(0.8, 1.9)
+		shoreline_rocks.append(_make_transform(
+			Vector3(x, ground + size * 0.28, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * stretch, size * 0.72, size)
+		))
+
+	var attempts := 0
+	while ridge_rocks.size() < 310 and attempts < 5200:
+		attempts += 1
+		var x := _rng.randf_range(-520.0, 520.0)
+		var z := _rng.randf_range(-460.0, 460.0)
+		var ground := _height_at(x, z)
+		var slope := _slope_at(x, z)
+		if ground < 17.0 or slope < 0.72 or ground > 56.0:
+			continue
+		var size := _rng.randf_range(2.0, 8.5)
+		ridge_rocks.append(_make_transform(
+			Vector3(x, ground + size * 0.22, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(1.0, 1.8), size * 0.85, size)
+		))
+
+	for i in range(900):
+		var x := _rng.randf_range(-ISLAND_RX * 0.98, ISLAND_RX * 0.98)
+		var z := _rng.randf_range(-ISLAND_RZ * 0.98, ISLAND_RZ * 0.98)
+		var ground := _height_at(x, z)
+		if ground < 0.8 or ground > 38.0:
+			continue
+		if _near_river(x, z, 9.0) or _near_lake(x, z, 18.0):
+			continue
+		var size := _rng.randf_range(0.18, 0.72)
+		scree.append(_make_transform(
+			Vector3(x, ground + size * 0.28, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(0.8, 1.8), size * 0.65, size)
+		))
+
+	_add_multimesh("JaggedCoastalRockShelves", _rock_mesh, shoreline_rocks, _rock_material)
+	_add_multimesh("MountainScreeOutcrops", _rock_mesh, ridge_rocks, _rock_material)
+	_add_multimesh("FineScatteredScree", _rock_mesh, scree, _rock_material)
