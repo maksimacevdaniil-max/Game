@@ -21,12 +21,12 @@ var _sky_material: ProceduralSkyMaterial
 var _day_clock := 0.25
 var _orbit_time := 0.0
 
-var _terrain_material: StandardMaterial3D
+var _terrain_material: ShaderMaterial
 var _sand_material: StandardMaterial3D
 var _rock_material: StandardMaterial3D
 var _trunk_material: StandardMaterial3D
-var _pine_material: StandardMaterial3D
-var _pine_light_material: StandardMaterial3D
+var _pine_material: ShaderMaterial
+var _pine_light_material: ShaderMaterial
 var _bush_material: StandardMaterial3D
 var _water_material: ShaderMaterial
 var _river_material: StandardMaterial3D
@@ -103,9 +103,46 @@ func _advance_day_cycle(delta: float) -> void:
 
 
 func _create_materials() -> void:
-	_terrain_material = StandardMaterial3D.new()
-	_terrain_material.vertex_color_use_as_albedo = true
-	_terrain_material.roughness = 1.0
+	var terrain_shader := Shader.new()
+	terrain_shader.code = """
+shader_type spatial;
+varying vec3 world_position;
+float hash21(vec2 p) {
+	p = fract(p * vec2(123.34, 456.21));
+	p += dot(p, p + 45.32);
+	return fract(p.x * p.y);
+}
+float noise2d(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+float fbm(vec2 p) {
+	float value = 0.0;
+	float amplitude = 0.5;
+	for (int i = 0; i < 4; i++) {
+		value += noise2d(p) * amplitude;
+		p *= 2.03;
+		amplitude *= 0.5;
+	}
+	return value;
+}
+void vertex() {
+	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+void fragment() {
+	float grain = fbm(world_position.xz * 0.22);
+	float fine_grain = noise2d(world_position.xz * 1.6);
+	vec3 base = COLOR.rgb;
+	base *= 0.82 + grain * 0.34;
+	base = mix(base, base * vec3(0.66, 0.73, 0.59), smoothstep(0.67, 0.92, fine_grain) * 0.22);
+	ALBEDO = base;
+	ROUGHNESS = 0.98;
+}
+"""
+	_terrain_material = ShaderMaterial.new()
+	_terrain_material.shader = terrain_shader
 
 	_sand_material = StandardMaterial3D.new()
 	_sand_material.albedo_color = Color(0.42, 0.37, 0.29)
@@ -119,13 +156,8 @@ func _create_materials() -> void:
 	_trunk_material.albedo_color = Color(0.22, 0.16, 0.12)
 	_trunk_material.roughness = 1.0
 
-	_pine_material = StandardMaterial3D.new()
-	_pine_material.albedo_color = Color(0.045, 0.16, 0.105)
-	_pine_material.roughness = 0.96
-
-	_pine_light_material = StandardMaterial3D.new()
-	_pine_light_material.albedo_color = Color(0.075, 0.205, 0.125)
-	_pine_light_material.roughness = 0.95
+	_pine_material = _make_pine_material(Color(0.045, 0.16, 0.105))
+	_pine_light_material = _make_pine_material(Color(0.075, 0.205, 0.125))
 
 	_bush_material = StandardMaterial3D.new()
 	_bush_material.albedo_color = Color(0.105, 0.205, 0.105)
@@ -175,6 +207,34 @@ void fragment() {
 	_grass_mesh.bottom_radius = 0.12
 	_grass_mesh.height = 0.62
 	_grass_mesh.radial_segments = 4
+
+
+
+func _make_pine_material(tint: Color) -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode cull_disabled;
+uniform vec4 tint : source_color = vec4(0.05, 0.16, 0.10, 1.0);
+varying vec3 tree_origin;
+void vertex() {
+	tree_origin = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+	float canopy_mask = clamp((VERTEX.y + 5.0) / 10.0, 0.0, 1.0);
+	float wind_a = sin(TIME * 0.82 + tree_origin.x * 0.018 + tree_origin.z * 0.021 + VERTEX.y * 0.18);
+	float wind_b = cos(TIME * 0.64 + tree_origin.z * 0.025 + VERTEX.y * 0.13);
+	VERTEX.x += wind_a * 0.17 * canopy_mask;
+	VERTEX.z += wind_b * 0.10 * canopy_mask;
+}
+void fragment() {
+	float variation = 0.91 + 0.09 * sin(tree_origin.x * 0.08 + tree_origin.z * 0.07);
+	ALBEDO = tint.rgb * variation;
+	ROUGHNESS = 0.97;
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	material.set_shader_parameter("tint", tint)
+	return material
 
 
 func _create_atmosphere() -> void:
