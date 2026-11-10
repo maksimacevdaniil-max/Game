@@ -2431,11 +2431,11 @@ func _create_ravine_suspension_bridge() -> void:
 			var top_delta: Vector3 = top_end - top_start
 			var lower_delta: Vector3 = lower_end - lower_start
 			upper_cables.append(Transform3D(
-				Basis(Vector3.UP, top_delta.normalized()).scaled(Vector3(0.085, top_delta.length(), 0.085)),
+				Basis(Quaternion(Vector3.UP, top_delta.normalized())).scaled(Vector3(0.085, top_delta.length(), 0.085)),
 				(top_start + top_end) * 0.5
 			))
 			lower_cables.append(Transform3D(
-				Basis(Vector3.UP, lower_delta.normalized()).scaled(Vector3(0.065, lower_delta.length(), 0.065)),
+				Basis(Quaternion(Vector3.UP, lower_delta.normalized())).scaled(Vector3(0.065, lower_delta.length(), 0.065)),
 				(lower_start + lower_end) * 0.5
 			))
 
