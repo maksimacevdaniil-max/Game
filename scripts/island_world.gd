@@ -220,8 +220,10 @@ func _create_terrain() -> void:
 		var z := -WORLD_Z + (float(z_index) / float(GRID_Z)) * WORLD_Z * 2.0
 		for x_index in range(GRID_X + 1):
 			var x := -WORLD_X + (float(x_index) / float(GRID_X)) * WORLD_X * 2.0
-			surface.set_color(_terrain_color(x, z))
-			surface.add_vertex(Vector3(x, _height_at(x, z), z))
+			var height := _height_at(x, z)
+			var slope := _slope_at(x, z)
+			surface.set_color(_terrain_color(x, z, height, slope))
+			surface.add_vertex(Vector3(x, height, z))
 
 	for z_index in range(GRID_Z):
 		for x_index in range(GRID_X):
@@ -265,9 +267,7 @@ func _height_at(x: float, z: float) -> float:
 	return lerp(SEA_LEVEL - 0.8, elevation, land)
 
 
-func _terrain_color(x: float, z: float) -> Color:
-	var height := _height_at(x, z)
-	var slope := _slope_at(x, z)
+func _terrain_color(x: float, z: float, height: float, slope: float) -> Color:
 	var grass := Color(0.15, 0.235, 0.145)
 	var dark_grass := Color(0.075, 0.145, 0.095)
 	var moss := Color(0.23, 0.265, 0.16)
