@@ -23,8 +23,8 @@ var _orbit_time := 0.0
 
 var _terrain_material: ShaderMaterial
 var _sand_material: StandardMaterial3D
-var _rock_material: StandardMaterial3D
-var _trunk_material: StandardMaterial3D
+var _rock_material: ShaderMaterial
+var _trunk_material: ShaderMaterial
 var _pine_material: ShaderMaterial
 var _pine_light_material: ShaderMaterial
 var _bush_material: StandardMaterial3D
@@ -148,13 +148,8 @@ void fragment() {
 	_sand_material.albedo_color = Color(0.42, 0.37, 0.29)
 	_sand_material.roughness = 0.98
 
-	_rock_material = StandardMaterial3D.new()
-	_rock_material.albedo_color = Color(0.27, 0.29, 0.28)
-	_rock_material.roughness = 0.97
-
-	_trunk_material = StandardMaterial3D.new()
-	_trunk_material.albedo_color = Color(0.22, 0.16, 0.12)
-	_trunk_material.roughness = 1.0
+	_rock_material = _make_rock_material(Color(0.27, 0.29, 0.28))
+	_trunk_material = _make_bark_material(Color(0.22, 0.16, 0.12))
 
 	_pine_material = _make_pine_material(Color(0.045, 0.16, 0.105))
 	_pine_light_material = _make_pine_material(Color(0.075, 0.205, 0.125))
@@ -208,6 +203,62 @@ void fragment() {
 	_grass_mesh.height = 0.62
 	_grass_mesh.radial_segments = 4
 
+
+
+
+func _make_bark_material(tint: Color) -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+uniform vec4 bark_tint : source_color = vec4(0.22, 0.16, 0.12, 1.0);
+varying vec3 local_position;
+float bark_noise(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+void vertex() {
+	local_position = VERTEX;
+}
+void fragment() {
+	float grooves = sin(local_position.y * 21.0 + sin(local_position.x * 8.0 + local_position.z * 7.0) * 1.8);
+	float flecks = bark_noise(floor(local_position.xz * 8.0));
+	float grain = 0.82 + grooves * 0.075 + flecks * 0.12;
+	ALBEDO = bark_tint.rgb * grain;
+	ROUGHNESS = 0.99;
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	material.set_shader_parameter("bark_tint", tint)
+	return material
+
+
+func _make_rock_material(tint: Color) -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+uniform vec4 stone_tint : source_color = vec4(0.27, 0.29, 0.28, 1.0);
+varying vec3 local_position;
+float stone_hash(vec3 p) {
+	p = fract(p * 0.3183099 + vec3(0.1));
+	p *= 17.0;
+	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+void vertex() {
+	local_position = VERTEX;
+}
+void fragment() {
+	float broad = stone_hash(floor(local_position * 2.5));
+	float fine = stone_hash(floor(local_position * 14.0));
+	float striation = sin(local_position.y * 5.0 + local_position.x * 2.0) * 0.045;
+	float variation = 0.78 + broad * 0.2 + fine * 0.12 + striation;
+	ALBEDO = stone_tint.rgb * variation;
+	ROUGHNESS = 0.96;
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	material.set_shader_parameter("stone_tint", tint)
+	return material
 
 
 func _make_pine_material(tint: Color) -> ShaderMaterial:
