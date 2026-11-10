@@ -61,6 +61,7 @@ func _ready() -> void:
 	_scatter_understory()
 	_scatter_rocks_and_logs()
 	_create_coastal_and_mountain_details()
+	_create_beach_tide_pools_and_driftwood()
 	_create_cave_system()
 	_create_coastal_camp()
 	_create_plane_wreck()
@@ -1113,3 +1114,91 @@ func _create_coastal_and_mountain_details() -> void:
 	_add_multimesh("JaggedCoastalRockShelves", _rock_mesh, shoreline_rocks, _rock_material)
 	_add_multimesh("MountainScreeOutcrops", _rock_mesh, ridge_rocks, _rock_material)
 	_add_multimesh("FineScatteredScree", _rock_mesh, scree, _rock_material)
+
+
+
+func _create_beach_tide_pools_and_driftwood() -> void:
+	var driftwood_mesh := CylinderMesh.new()
+	driftwood_mesh.top_radius = 0.22
+	driftwood_mesh.bottom_radius = 0.34
+	driftwood_mesh.height = 1.0
+	driftwood_mesh.radial_segments = 6
+	var driftwood_material := _make_bark_material(Color(0.19, 0.145, 0.105))
+	var driftwood: Array[Transform3D] = []
+	var beach_pebbles: Array[Transform3D] = []
+	var foam_stones: Array[Transform3D] = []
+
+	# Beach debris follows the irregular coast instead of forming a perfect ring.
+	for i in range(460):
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.885, 1.005)
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var ground := _height_at(x, z)
+		if ground < SEA_LEVEL - 0.2 or ground > 2.8:
+			continue
+		var size := _rng.randf_range(0.12, 0.48)
+		beach_pebbles.append(_make_transform(
+			Vector3(x, ground + size * 0.35, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(1.0, 2.2), size * 0.55, size)
+		))
+
+	for i in range(58):
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.87, 0.96)
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var ground := _height_at(x, z)
+		if ground < SEA_LEVEL + 0.1 or ground > 4.5:
+			continue
+		var length := _rng.randf_range(3.0, 10.0)
+		var rotation := _rng.randf_range(0.0, TAU)
+		driftwood.append(_make_transform(
+			Vector3(x, ground + 0.18, z),
+			rotation,
+			Vector3(0.42, 0.42, length)
+		))
+
+	for i in range(95):
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.91, 1.025)
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var ground := _height_at(x, z)
+		if ground < SEA_LEVEL - 0.5 or ground > 1.2:
+			continue
+		var size := _rng.randf_range(0.35, 1.25)
+		foam_stones.append(_make_transform(
+			Vector3(x, ground + size * 0.22, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * 1.7, size * 0.48, size)
+		))
+
+	_add_multimesh("WeatheredBeachPebbles", _rock_mesh, beach_pebbles, _rock_material)
+	_add_multimesh("TideLineFoamStones", _rock_mesh, foam_stones, _sand_material)
+	_add_multimesh("SaltWornDriftwood", driftwood_mesh, driftwood, driftwood_material)
+
+	# A few shallow pools sit just inland from the surf, using the actual terrain height.
+	var pool_material := StandardMaterial3D.new()
+	pool_material.albedo_color = Color(0.035, 0.12, 0.13, 0.88)
+	pool_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pool_material.roughness = 0.22
+	for i in range(8):
+		var angle := TAU * float(i) / 8.0 + 0.18
+		var radial := 0.89
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var ground := _height_at(x, z)
+		if ground < 0.0 or ground > 3.2:
+			continue
+		var pool_mesh := PlaneMesh.new()
+		pool_mesh.size = Vector2(_rng.randf_range(5.0, 11.0), _rng.randf_range(3.0, 7.0))
+		var pool := MeshInstance3D.new()
+		pool.name = "RockPool_%02d" % i
+		pool.mesh = pool_mesh
+		pool.material_override = pool_material
+		pool.position = Vector3(x, ground + 0.08, z)
+		pool.rotation_degrees.y = _rng.randf_range(0.0, 180.0)
+		pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(pool)
