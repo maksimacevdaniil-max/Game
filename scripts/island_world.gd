@@ -67,6 +67,7 @@ func _ready() -> void:
 	_scatter_rocks_and_logs()
 	_create_coastal_and_mountain_details()
 	_create_beach_tide_pools_and_driftwood()
+	_create_coastal_dune_grass()
 	_create_mountain_streams_and_waterfalls()
 	_create_stream_bank_gravel()
 	_create_cave_system()
@@ -2097,3 +2098,47 @@ func _create_coastal_sea_stacks() -> void:
 	_add_multimesh("OffshoreSeaStackCores", _rock_mesh, stack_cores, _rock_material)
 	_add_multimesh("OffshoreSeaStackCaps", _rock_mesh, stack_caps, _rock_material)
 	_add_multimesh("SubmergedCoastalReefRocks", _rock_mesh, submerged_rocks, _rock_material)
+
+
+
+func _create_coastal_dune_grass() -> void:
+	var dune_grass_mesh := CylinderMesh.new()
+	dune_grass_mesh.top_radius = 0.012
+	dune_grass_mesh.bottom_radius = 0.095
+	dune_grass_mesh.height = 0.82
+	dune_grass_mesh.radial_segments = 4
+	var dune_grass_material := _make_pine_material(Color(0.255, 0.285, 0.16))
+	var salt_shrub_material := StandardMaterial3D.new()
+	salt_shrub_material.albedo_color = Color(0.22, 0.255, 0.15)
+	salt_shrub_material.roughness = 1.0
+
+	var dune_tufts: Array[Transform3D] = []
+	var salt_shrubs: Array[Transform3D] = []
+	var attempts := 0
+	while dune_tufts.size() < 920 and attempts < 10500:
+		attempts += 1
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.84, 0.995)
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var ground := _height_at(x, z)
+		if ground < 0.35 or ground > 5.8 or _slope_at(x, z) > 0.95:
+			continue
+		if _near_river(x, z, 14.0) or _near_lake(x, z, 32.0) or _in_clearing(x, z):
+			continue
+		var size := _rng.randf_range(0.65, 1.5)
+		dune_tufts.append(_make_transform(
+			Vector3(x, ground + 0.38 * size, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size, size, size)
+		))
+		if _rng.randf() < 0.16:
+			var shrub_size := _rng.randf_range(0.65, 1.2)
+			salt_shrubs.append(_make_transform(
+				Vector3(x + _rng.randf_range(-1.0, 1.0), ground + 0.42 * shrub_size, z + _rng.randf_range(-1.0, 1.0)),
+				_rng.randf_range(0.0, TAU),
+				Vector3(1.25, 0.75, 1.1) * shrub_size
+			))
+
+	_add_multimesh("CoastalDuneGrassTufts", dune_grass_mesh, dune_tufts, dune_grass_material)
+	_add_multimesh("SaltSprayCoastalShrubs", _bush_mesh, salt_shrubs, salt_shrub_material)
