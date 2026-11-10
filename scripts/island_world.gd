@@ -704,6 +704,48 @@ func _create_cave_entrance(location: Vector3, cave_name: String, size: float) ->
 	arch.position.y = 2.8
 	cave.add_child(arch)
 
+	# Broken rock lips and hanging stone teeth make the cave mouth read as
+	# a natural opening rather than a flat black portal.
+	var cave_rock_mesh := SphereMesh.new()
+	cave_rock_mesh.radius = 1.0
+	cave_rock_mesh.height = 2.0
+	cave_rock_mesh.radial_segments = 8
+	cave_rock_mesh.rings = 5
+	for i in range(7):
+		var angle := PI * float(i) / 6.0
+		var rock := MeshInstance3D.new()
+		rock.name = "CaveMouthBrokenRock_%02d" % i
+		rock.mesh = cave_rock_mesh
+		rock.material_override = _rock_material
+		rock.position = Vector3(cos(angle) * 6.2, 1.1 + sin(angle) * 4.7, 0.12)
+		rock.scale = Vector3(_rng.randf_range(1.0, 1.8), _rng.randf_range(0.9, 1.7), 1.0)
+		cave.add_child(rock)
+
+	for i in range(4):
+		var tooth := MeshInstance3D.new()
+		tooth.name = "CaveCeilingStalactite_%02d" % i
+		var tooth_mesh := ConeMesh.new()
+		tooth_mesh.top_radius = 0.04
+		tooth_mesh.bottom_radius = _rng.randf_range(0.24, 0.48)
+		tooth_mesh.height = _rng.randf_range(1.2, 2.8)
+		tooth_mesh.radial_segments = 5
+		tooth.mesh = tooth_mesh
+		tooth.material_override = _rock_material
+		tooth.position = Vector3(_rng.randf_range(-3.7, 3.7), 7.1, -0.35)
+		cave.add_child(tooth)
+
+	var cave_floor := MeshInstance3D.new()
+	cave_floor.name = "CaveShadowedFloor"
+	var floor_mesh := CylinderMesh.new()
+	floor_mesh.top_radius = 4.2
+	floor_mesh.bottom_radius = 4.2
+	floor_mesh.height = 0.16
+	floor_mesh.radial_segments = 12
+	cave_floor.mesh = floor_mesh
+	cave_floor.material_override = darkness
+	cave_floor.position = Vector3(0.0, -0.05, -1.8)
+	cave.add_child(cave_floor)
+
 
 func _create_coastal_camp() -> void:
 	var camp := Node3D.new()
