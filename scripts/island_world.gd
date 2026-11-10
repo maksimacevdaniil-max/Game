@@ -71,6 +71,7 @@ func _ready() -> void:
 	_create_biome_groundcover()
 	_create_ravine_boulder_fields()
 	_create_natural_rock_arches()
+	_create_highland_meadow_details()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_river_bridge()
@@ -1501,3 +1502,52 @@ func _create_natural_rock_arches() -> void:
 
 	_add_multimesh("NaturalStoneArchRings", _rock_mesh, arch_stones, _rock_material)
 	_add_multimesh("WeatheredStandingStones", _rock_mesh, standing_stones, _rock_material)
+
+
+
+func _create_highland_meadow_details() -> void:
+	var flower_mesh := SphereMesh.new()
+	flower_mesh.radius = 0.16
+	flower_mesh.height = 0.22
+	flower_mesh.radial_segments = 6
+	flower_mesh.rings = 4
+	var flower_white := StandardMaterial3D.new()
+	flower_white.albedo_color = Color(0.78, 0.76, 0.58)
+	flower_white.roughness = 0.9
+	var flower_purple := StandardMaterial3D.new()
+	flower_purple.albedo_color = Color(0.42, 0.31, 0.48)
+	flower_purple.roughness = 0.9
+	var meadow_grass := StandardMaterial3D.new()
+	meadow_grass.albedo_color = Color(0.28, 0.32, 0.17)
+	meadow_grass.roughness = 1.0
+	var grass_mesh := CylinderMesh.new()
+	grass_mesh.top_radius = 0.012
+	grass_mesh.bottom_radius = 0.09
+	grass_mesh.height = 0.54
+	grass_mesh.radial_segments = 4
+
+	var white_flowers: Array[Transform3D] = []
+	var purple_flowers: Array[Transform3D] = []
+	var grass_tufts: Array[Transform3D] = []
+	var attempts := 0
+	while white_flowers.size() + purple_flowers.size() < 420 and attempts < 6800:
+		attempts += 1
+		var x := _rng.randf_range(-500.0, 500.0)
+		var z := _rng.randf_range(-430.0, 430.0)
+		var ground := _height_at(x, z)
+		if ground < 17.0 or ground > 49.0 or _slope_at(x, z) > 1.15:
+			continue
+		if _near_river(x, z, 13.0) or _near_lake(x, z, 28.0) or _in_clearing(x, z):
+			continue
+		var size := _rng.randf_range(0.65, 1.25)
+		var transform := _make_transform(Vector3(x, ground + 0.22 * size, z), _rng.randf_range(0.0, TAU), Vector3.ONE * size)
+		if _rng.randf() < 0.55:
+			white_flowers.append(transform)
+		else:
+			purple_flowers.append(transform)
+		if _rng.randf() < 0.48:
+			grass_tufts.append(_make_transform(Vector3(x + 0.3, ground + 0.24, z - 0.2), _rng.randf_range(0.0, TAU), Vector3.ONE * _rng.randf_range(0.7, 1.3)))
+
+	_add_multimesh("HighlandWhiteWildflowers", flower_mesh, white_flowers, flower_white)
+	_add_multimesh("HighlandPurpleWildflowers", flower_mesh, purple_flowers, flower_purple)
+	_add_multimesh("AlpineMeadowGrassTufts", grass_mesh, grass_tufts, meadow_grass)
