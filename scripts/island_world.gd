@@ -86,6 +86,7 @@ func _ready() -> void:
 	_create_northern_ridge_spires()
 	_create_highland_deadwood()
 	_create_abandoned_research_site()
+	_create_ravine_suspension_bridge()
 	_create_trails()
 	_create_river_bridge()
 	_create_forest_lookout()
@@ -2335,3 +2336,123 @@ func _create_waterfall_basin_details() -> void:
 	_add_multimesh("NorthWaterfallGraniteBasinRim", _rock_mesh, basin_rocks, _rock_material)
 	_add_multimesh("NorthWaterfallSprayFoam", _bush_mesh, spray_foam, foam_material)
 	_add_multimesh("NorthWaterfallDownstreamPebbles", _rock_mesh, downstream_pebbles, _rock_material)
+
+
+
+func _create_ravine_suspension_bridge() -> void:
+	# A weathered footbridge crosses the existing eroded ravine.
+	# A local RNG keeps this landmark deterministic without changing the
+	# placement of the island's existing vegetation and rock fields.
+	var bridge_rng := RandomNumberGenerator.new()
+	bridge_rng.seed = 31415927
+
+	var ravine_z: float = -55.0
+	var ravine_center_x: float = -82.0 + sin(ravine_z * 0.0085) * 52.0
+	var half_span: float = 36.0
+	var start_x: float = ravine_center_x - half_span
+	var end_x: float = ravine_center_x + half_span
+	var start_y: float = _height_at(start_x, ravine_z) + 1.35
+	var end_y: float = _height_at(end_x, ravine_z) + 1.35
+	var deck_length: float = end_x - start_x
+
+	var timber_material := _make_bark_material(Color(0.24, 0.16, 0.105))
+	var dark_timber_material := _make_bark_material(Color(0.105, 0.085, 0.065))
+	var deck_mesh := BoxMesh.new()
+	var support_mesh := BoxMesh.new()
+	var post_mesh := CylinderMesh.new()
+	post_mesh.top_radius = 0.72
+	post_mesh.bottom_radius = 1.0
+	post_mesh.height = 1.0
+	post_mesh.radial_segments = 7
+	var cable_mesh := CylinderMesh.new()
+	cable_mesh.top_radius = 0.085
+	cable_mesh.bottom_radius = 0.085
+	cable_mesh.height = 1.0
+	cable_mesh.radial_segments = 6
+
+	var deck_planks: Array[Transform3D] = []
+	var under_beams: Array[Transform3D] = []
+	var posts: Array[Transform3D] = []
+	var upper_cables: Array[Transform3D] = []
+	var lower_cables: Array[Transform3D] = []
+	var anchor_rocks: Array[Transform3D] = []
+	var post_top_points: Array[Vector3] = []
+	var post_lower_points: Array[Vector3] = []
+
+	const PLANK_COUNT := 38
+	for i in range(PLANK_COUNT):
+		var t: float = (float(i) + 0.5) / float(PLANK_COUNT)
+		var x: float = lerpf(start_x, end_x, t)
+		var deck_y: float = lerpf(start_y, end_y, t) - sin(PI * t) * 3.1
+		var plank_length: float = deck_length / float(PLANK_COUNT) - 0.08
+		deck_planks.append(_make_transform(
+			Vector3(x, deck_y, ravine_z + bridge_rng.randf_range(-0.035, 0.035)),
+			bridge_rng.randf_range(-0.012, 0.012),
+			Vector3(plank_length, 0.18, 3.85)
+		))
+		under_beams.append(_make_transform(
+			Vector3(x, deck_y - 0.22, ravine_z - 1.72),
+			0.0,
+			Vector3(plank_length, 0.32, 0.34)
+		))
+		under_beams.append(_make_transform(
+			Vector3(x, deck_y - 0.22, ravine_z + 1.72),
+			0.0,
+			Vector3(plank_length, 0.32, 0.34)
+		))
+
+	# Ten pairs of upright timber posts carry two sagging rope rails.
+	const POST_COUNT := 10
+	for i in range(POST_COUNT):
+		var t: float = float(i) / float(POST_COUNT - 1)
+		var x: float = lerpf(start_x, end_x, t)
+		var deck_y: float = lerpf(start_y, end_y, t) - sin(PI * t) * 3.1
+		for side in [-1.0, 1.0]:
+			var post_position := Vector3(x, deck_y + 1.22, ravine_z + side * 2.12)
+			posts.append(_make_transform(
+				post_position,
+				bridge_rng.randf_range(-0.025, 0.025),
+				Vector3(0.34, 2.44, 0.34)
+			))
+			post_top_points.append(Vector3(x, deck_y + 2.36, ravine_z + side * 2.12))
+			post_lower_points.append(Vector3(x, deck_y + 0.78, ravine_z + side * 2.12))
+
+	# Build the rails as short cylinder segments so their sag follows the deck.
+	for i in range(0, post_top_points.size(), 2):
+		if i + 2 >= post_top_points.size():
+			continue
+		for side_index in range(2):
+			var point_index: int = i + side_index
+			var next_index: int = point_index + 2
+			var top_start: Vector3 = post_top_points[point_index]
+			var top_end: Vector3 = post_top_points[next_index]
+			var lower_start: Vector3 = post_lower_points[point_index]
+			var lower_end: Vector3 = post_lower_points[next_index]
+			var top_delta: Vector3 = top_end - top_start
+			var lower_delta: Vector3 = lower_end - lower_start
+			upper_cables.append(Transform3D(
+				Basis(Vector3.UP, top_delta.normalized()).scaled(Vector3(0.085, top_delta.length(), 0.085)),
+				(top_start + top_end) * 0.5
+			))
+			lower_cables.append(Transform3D(
+				Basis(Vector3.UP, lower_delta.normalized()).scaled(Vector3(0.065, lower_delta.length(), 0.065)),
+				(lower_start + lower_end) * 0.5
+			))
+
+	# Rough anchor stones blend both bridgeheads into the gorge shoulders.
+	for end_x_value in [start_x, end_x]:
+		var ground: float = _height_at(end_x_value, ravine_z)
+		for side in [-1.0, 1.0]:
+			var size: float = bridge_rng.randf_range(2.4, 3.8)
+			anchor_rocks.append(_make_transform(
+				Vector3(end_x_value, ground + size * 0.28, ravine_z + side * 3.5),
+				bridge_rng.randf_range(0.0, TAU),
+				Vector3(size * 1.35, size * 0.82, size)
+			))
+
+	_add_multimesh("RavineBridgeWeatheredDeck", deck_mesh, deck_planks, timber_material)
+	_add_multimesh("RavineBridgeUnderslungBeams", support_mesh, under_beams, dark_timber_material)
+	_add_multimesh("RavineBridgeTimberPosts", post_mesh, posts, timber_material)
+	_add_multimesh("RavineBridgeUpperRopeRails", cable_mesh, upper_cables, dark_timber_material)
+	_add_multimesh("RavineBridgeLowerRopeRails", cable_mesh, lower_cables, dark_timber_material)
+	_add_multimesh("RavineBridgeStoneAnchors", _rock_mesh, anchor_rocks, _rock_material)
