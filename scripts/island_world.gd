@@ -3,12 +3,12 @@ extends Node3D
 ## Original map layout and assets. Mobile-friendly MultiMesh vegetation.
 ## The rotating overview camera is a temporary showcase, not player controls.
 
-const GRID_X := 224
-const GRID_Z := 192
-const WORLD_X := 350.0
-const WORLD_Z := 300.0
-const ISLAND_RX := 326.0
-const ISLAND_RZ := 278.0
+const GRID_X := 280
+const GRID_Z := 240
+const WORLD_X := 700.0
+const WORLD_Z := 600.0
+const ISLAND_RX := 652.0
+const ISLAND_RZ := 556.0
 const SEA_LEVEL := -3.0
 
 var _rng := RandomNumberGenerator.new()
@@ -35,14 +35,14 @@ func _ready() -> void:
 	_rng.seed = 14071986
 	_height_noise.seed = 92841
 	_height_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_height_noise.frequency = 0.0068
+	_height_noise.frequency = 0.0034
 	_height_noise.fractal_octaves = 5
 	_height_noise.fractal_gain = 0.52
 	_height_noise.fractal_lacunarity = 2.05
 
 	_detail_noise.seed = 77193
 	_detail_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	_detail_noise.frequency = 0.032
+	_detail_noise.frequency = 0.016
 	_detail_noise.fractal_octaves = 3
 	_detail_noise.fractal_gain = 0.48
 
@@ -69,10 +69,10 @@ func _process(delta: float) -> void:
 	_orbit_time += delta
 	if is_instance_valid(_camera):
 		var angle := 0.24 + _orbit_time * 0.009
-		var distance := 470.0 + sin(_orbit_time * 0.08) * 12.0
+		var distance := 940.0 + sin(_orbit_time * 0.08) * 12.0
 		_camera.position = Vector3(
 			cos(angle) * distance,
-			252.0 + sin(_orbit_time * 0.12) * 8.0,
+			504.0 + sin(_orbit_time * 0.12) * 16.0,
 			sin(angle) * distance
 		)
 		_camera.look_at(Vector3(0.0, 8.0, 0.0), Vector3.UP)
@@ -227,11 +227,11 @@ func _height_at(x: float, z: float) -> float:
 	var coast := radial + coast_noise
 	var land := 1.0 - smoothstep(0.91, 1.055, coast)
 
-	var lake_basin := 7.4 * exp(-pow((x - 118.0) / 33.0, 2.0) - pow((z + 4.0) / 24.0, 2.0))
-	var central_ridge := 28.0 * exp(-pow((x + 25.0) / 112.0, 2.0) - pow((z + 38.0) / 90.0, 2.0))
-	var north_peak := 34.0 * exp(-pow((x - 65.0) / 78.0, 2.0) - pow((z + 142.0) / 58.0, 2.0))
-	var west_ridge := 18.0 * exp(-pow((x + 175.0) / 62.0, 2.0) - pow((z + 15.0) / 125.0, 2.0))
-	var southern_hills := 8.0 * exp(-pow((x - 20.0) / 160.0, 2.0) - pow((z - 150.0) / 66.0, 2.0))
+	var lake_basin := 7.4 * exp(-pow((x - 236.0) / 66.0, 2.0) - pow((z + 8.0) / 48.0, 2.0))
+	var central_ridge := 28.0 * exp(-pow((x + 50.0) / 224.0, 2.0) - pow((z + 76.0) / 180.0, 2.0))
+	var north_peak := 34.0 * exp(-pow((x - 130.0) / 156.0, 2.0) - pow((z + 284.0) / 116.0, 2.0))
+	var west_ridge := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
+	var southern_hills := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var broad_hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	var fine_detail := _detail_noise.get_noise_2d(x, z) * 1.35
 	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin
@@ -276,18 +276,18 @@ func _height_at_raw(x: float, z: float) -> float:
 	var radial := sqrt(nx * nx + nz * nz)
 	var coast := radial + _height_noise.get_noise_2d(x * 0.52, z * 0.52) * 0.027
 	var land := 1.0 - smoothstep(0.91, 1.055, coast)
-	var basin := 7.4 * exp(-pow((x - 118.0) / 33.0, 2.0) - pow((z + 4.0) / 24.0, 2.0))
-	var central := 28.0 * exp(-pow((x + 25.0) / 112.0, 2.0) - pow((z + 38.0) / 90.0, 2.0))
-	var north := 34.0 * exp(-pow((x - 65.0) / 78.0, 2.0) - pow((z + 142.0) / 58.0, 2.0))
-	var west := 18.0 * exp(-pow((x + 175.0) / 62.0, 2.0) - pow((z + 15.0) / 125.0, 2.0))
-	var south := 8.0 * exp(-pow((x - 20.0) / 160.0, 2.0) - pow((z - 150.0) / 66.0, 2.0))
+	var basin := 7.4 * exp(-pow((x - 236.0) / 66.0, 2.0) - pow((z + 8.0) / 48.0, 2.0))
+	var central := 28.0 * exp(-pow((x + 50.0) / 224.0, 2.0) - pow((z + 76.0) / 180.0, 2.0))
+	var north := 34.0 * exp(-pow((x - 130.0) / 156.0, 2.0) - pow((z + 284.0) / 116.0, 2.0))
+	var west := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
+	var south := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin, land)
 
 
 func _create_ocean() -> void:
 	var ocean_mesh := PlaneMesh.new()
-	ocean_mesh.size = Vector2(1800.0, 1800.0)
+	ocean_mesh.size = Vector2(3600.0, 3600.0)
 	ocean_mesh.subdivide_width = 100
 	ocean_mesh.subdivide_depth = 100
 	var ocean := MeshInstance3D.new()
@@ -308,7 +308,7 @@ func _create_lake() -> void:
 	lake.name = "HiddenForestLake"
 	lake.mesh = lake_mesh
 	lake.material_override = _water_material
-	lake.position = Vector3(118.0, _height_at(118.0, -4.0) + 0.35, -4.0)
+	lake.position = Vector3(236.0, _height_at(236.0, -8.0) + 0.35, -8.0)
 	lake.rotation_degrees.y = -18.0
 	lake.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(lake)
@@ -320,14 +320,14 @@ func _create_river() -> void:
 	const SEGMENTS := 100
 	for i in range(SEGMENTS + 1):
 		var t := float(i) / float(SEGMENTS)
-		var x := lerp(55.0, -165.0, t) + sin(t * PI * 3.0) * 24.0
-		var z := lerp(-178.0, 205.0, t)
+		var x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
+		var z := lerp(-356.0, 410.0, t)
 		var next_t := min(t + 0.008, 1.0)
-		var nx := lerp(55.0, -165.0, next_t) + sin(next_t * PI * 3.0) * 24.0
-		var nz := lerp(-178.0, 205.0, next_t)
+		var nx := lerp(110.0, -330.0, next_t) + sin(next_t * PI * 3.0) * 48.0
+		var nz := lerp(-356.0, 410.0, next_t)
 		var tangent := Vector2(nx - x, nz - z).normalized()
 		var side := Vector2(-tangent.y, tangent.x)
-		var width := lerp(5.2, 1.6, t)
+		var width := lerp(10.4, 3.2, t)
 		var y := _height_at(x, z) + 0.12
 		left.append(Vector3(x + side.x * width, y, z + side.y * width))
 		right.append(Vector3(x - side.x * width, y, z - side.y * width))
@@ -388,7 +388,7 @@ func _scatter_conifer_forest() -> void:
 	var top: Array[Transform3D] = []
 
 	var attempts := 0
-	while trunks.size() < 1850 and attempts < 11500:
+	while trunks.size() < 3500 and attempts < 23000:
 		attempts += 1
 		var angle := _rng.randf_range(0.0, TAU)
 		var radius := sqrt(_rng.randf_range(0.035, 0.91))
@@ -397,7 +397,7 @@ func _scatter_conifer_forest() -> void:
 		var height := _height_at(x, z)
 		if height < 2.0 or height > 30.0 or _slope_at(x, z) > 1.35:
 			continue
-		if _near_river(x, z, 13.0) or _near_lake(x, z, 28.0):
+		if _near_river(x, z, 26.0) or _near_lake(x, z, 56.0):
 			continue
 		if _in_clearing(x, z):
 			continue
@@ -435,14 +435,14 @@ func _scatter_broadleaf_trees() -> void:
 	var trunks: Array[Transform3D] = []
 	var crowns: Array[Transform3D] = []
 	var attempts := 0
-	while crowns.size() < 240 and attempts < 2200:
+	while crowns.size() < 460 and attempts < 4400:
 		attempts += 1
-		var x := _rng.randf_range(-270.0, 270.0)
-		var z := _rng.randf_range(-225.0, 225.0)
+		var x := _rng.randf_range(-540.0, 540.0)
+		var z := _rng.randf_range(-450.0, 450.0)
 		var height := _height_at(x, z)
 		if height < 2.0 or height > 16.0 or _slope_at(x, z) > 1.05:
 			continue
-		if _near_river(x, z, 11.0) or _near_lake(x, z, 22.0) or _in_clearing(x, z):
+		if _near_river(x, z, 22.0) or _near_lake(x, z, 44.0) or _in_clearing(x, z):
 			continue
 		var scale := _rng.randf_range(0.8, 1.35)
 		trunks.append(_make_transform(Vector3(x, height + 4.5 * scale, z), 0.0, Vector3.ONE * scale))
@@ -455,14 +455,14 @@ func _scatter_understory() -> void:
 	var bushes: Array[Transform3D] = []
 	var grass: Array[Transform3D] = []
 	var attempts := 0
-	while bushes.size() < 780 and attempts < 4200:
+	while bushes.size() < 1500 and attempts < 8400:
 		attempts += 1
-		var x := _rng.randf_range(-290.0, 290.0)
-		var z := _rng.randf_range(-245.0, 245.0)
+		var x := _rng.randf_range(-580.0, 580.0)
+		var z := _rng.randf_range(-490.0, 490.0)
 		var height := _height_at(x, z)
 		if height < 1.7 or height > 22.0 or _slope_at(x, z) > 1.6:
 			continue
-		if _near_river(x, z, 8.0) or _near_lake(x, z, 16.0):
+		if _near_river(x, z, 16.0) or _near_lake(x, z, 32.0):
 			continue
 		if _rng.randf() < 0.32:
 			var s := _rng.randf_range(0.8, 1.65)
@@ -480,15 +480,15 @@ func _scatter_understory() -> void:
 func _scatter_rocks_and_logs() -> void:
 	var rocks: Array[Transform3D] = []
 	var logs: Array[Transform3D] = []
-	for i in range(360):
-		var x := _rng.randf_range(-305.0, 305.0)
-		var z := _rng.randf_range(-258.0, 258.0)
+	for i in range(600):
+		var x := _rng.randf_range(-610.0, 610.0)
+		var z := _rng.randf_range(-516.0, 516.0)
 		var height := _height_at(x, z)
 		if height < 0.0 or height > 40.0:
 			continue
 		var size := _rng.randf_range(0.6, 4.4)
 		rocks.append(_make_transform(Vector3(x, height + size * 0.34, z), _rng.randf_range(0.0, TAU), Vector3(size * 1.2, size * 0.7, size)))
-		if i < 95 and height > 1.5 and height < 16.0:
+		if i < 160 and height > 1.5 and height < 16.0:
 			var length := _rng.randf_range(2.0, 7.0)
 			logs.append(_make_transform(Vector3(x + 3.0, height + 0.35, z - 2.0), _rng.randf_range(0.0, TAU), Vector3(length, 0.32, 0.38)))
 
@@ -502,8 +502,8 @@ func _scatter_rocks_and_logs() -> void:
 
 
 func _create_cave_system() -> void:
-	_create_cave_entrance(Vector3(-122.0, _height_at(-122.0, -75.0), -75.0), "NorthernRidgeCave", 1.0)
-	_create_cave_entrance(Vector3(184.0, _height_at(184.0, 48.0), 48.0), "EasternCliffCave", 0.76)
+	_create_cave_entrance(Vector3(-244.0, _height_at(-244.0, -150.0), -150.0), "NorthernRidgeCave", 1.0)
+	_create_cave_entrance(Vector3(368.0, _height_at(368.0, 96.0), 96.0), "EasternCliffCave", 0.76)
 
 
 func _create_cave_entrance(location: Vector3, cave_name: String, size: float) -> void:
@@ -539,8 +539,8 @@ func _create_cave_entrance(location: Vector3, cave_name: String, size: float) ->
 func _create_coastal_camp() -> void:
 	var camp := Node3D.new()
 	camp.name = "AbandonedCoastalCamp"
-	var x := -208.0
-	var z := 152.0
+	var x := -416.0
+	var z := 304.0
 	camp.position = Vector3(x, _height_at(x, z) + 0.08, z)
 	add_child(camp)
 
@@ -578,8 +578,8 @@ func _create_coastal_camp() -> void:
 func _create_plane_wreck() -> void:
 	var wreck := Node3D.new()
 	wreck.name = "WreckedIslandAircraft"
-	var x := -250.0
-	var z := 96.0
+	var x := -500.0
+	var z := 192.0
 	wreck.position = Vector3(x, _height_at(x, z) + 1.1, z)
 	wreck.rotation.y = 0.42
 	add_child(wreck)
@@ -629,13 +629,13 @@ func _create_swamp_region() -> void:
 	pool_material.albedo_color = Color(0.025, 0.105, 0.095)
 	pool_material.roughness = 0.24
 
-	var center := Vector2(210.0, 155.0)
+	var center := Vector2(420.0, 310.0)
 	for i in range(7):
-		var offset := Vector2(_rng.randf_range(-28.0, 28.0), _rng.randf_range(-22.0, 22.0))
+		var offset := Vector2(_rng.randf_range(-56.0, 56.0), _rng.randf_range(-44.0, 44.0))
 		var point := center + offset
 		var ground := _height_at(point.x, point.y)
 		var pool_mesh := PlaneMesh.new()
-		pool_mesh.size = Vector2(_rng.randf_range(9.0, 19.0), _rng.randf_range(7.0, 15.0))
+		pool_mesh.size = Vector2(_rng.randf_range(18.0, 38.0), _rng.randf_range(14.0, 30.0))
 		var pool := MeshInstance3D.new()
 		pool.mesh = pool_mesh
 		pool.material_override = pool_material
@@ -652,9 +652,9 @@ func _create_swamp_region() -> void:
 	dead_trunk_mesh.bottom_radius = 0.42
 	dead_trunk_mesh.height = 9.0
 	dead_trunk_mesh.radial_segments = 6
-	for i in range(26):
-		var x := center.x + _rng.randf_range(-48.0, 48.0)
-		var z := center.y + _rng.randf_range(-38.0, 38.0)
+	for i in range(52):
+		var x := center.x + _rng.randf_range(-96.0, 96.0)
+		var z := center.y + _rng.randf_range(-76.0, 76.0)
 		var ground := _height_at(x, z)
 		var dead_tree := MeshInstance3D.new()
 		dead_tree.mesh = dead_trunk_mesh
@@ -691,8 +691,8 @@ void fragment() {
 func _create_abandoned_research_site() -> void:
 	var site := Node3D.new()
 	site.name = "AbandonedForestResearchSite"
-	var x := 164.0
-	var z := -122.0
+	var x := 328.0
+	var z := -244.0
 	site.position = Vector3(x, _height_at(x, z), z)
 	site.rotation.y = -0.32
 	add_child(site)
@@ -708,7 +708,7 @@ func _create_abandoned_research_site() -> void:
 	_add_box(site, Vector3(0.0, 2.0, 0.0), Vector3(13.0, 4.0, 9.0), wall)
 	_add_box(site, Vector3(0.0, 4.15, 0.0), Vector3(14.0, 0.45, 10.0), metal)
 	_add_box(site, Vector3(6.65, 1.3, 0.0), Vector3(0.3, 2.6, 2.2), metal)
-	_add_box(site, Vector3(-4.0, 1.35, 4.65), Vector3(2.5, 2.2, 0.18), metal)
+	_add_box(site, Vector3(-8.0, 1.35, 4.65), Vector3(2.5, 2.2, 0.18), metal)
 
 	var mast := MeshInstance3D.new()
 	var mast_mesh := CylinderMesh.new()
@@ -717,14 +717,14 @@ func _create_abandoned_research_site() -> void:
 	mast_mesh.height = 16.0
 	mast.mesh = mast_mesh
 	mast.material_override = metal
-	mast.position = Vector3(-7.0, 8.0, -4.0)
+	mast.position = Vector3(-7.0, 8.0, -8.0)
 	site.add_child(mast)
 
 
 func _create_trails() -> void:
-	_create_trail_segment(Vector3(-208.0, 0.0, 152.0), Vector3(-80.0, 0.0, 58.0), 3.0)
-	_create_trail_segment(Vector3(-80.0, 0.0, 58.0), Vector3(40.0, 0.0, -28.0), 2.4)
-	_create_trail_segment(Vector3(40.0, 0.0, -28.0), Vector3(164.0, 0.0, -122.0), 2.2)
+	_create_trail_segment(Vector3(-416.0, 0.0, 304.0), Vector3(-160.0, 0.0, 116.0), 6.0)
+	_create_trail_segment(Vector3(-160.0, 0.0, 116.0), Vector3(80.0, 0.0, -56.0), 4.8)
+	_create_trail_segment(Vector3(80.0, 0.0, -56.0), Vector3(328.0, 0.0, -244.0), 4.4)
 
 
 func _create_trail_segment(start: Vector3, finish: Vector3, width: float) -> void:
@@ -776,7 +776,7 @@ func _create_showcase_camera() -> void:
 	_camera.near = 0.2
 	_camera.far = 1500.0
 	add_child(_camera)
-	_camera.position = Vector3(360.0, 252.0, 340.0)
+	_camera.position = Vector3(720.0, 504.0, 680.0)
 	_camera.look_at(Vector3(0.0, 8.0, 0.0), Vector3.UP)
 	_camera.current = true
 
@@ -815,18 +815,18 @@ func _add_box(parent: Node3D, position: Vector3, size: Vector3, material: Materi
 
 
 func _near_river(x: float, z: float, radius: float) -> bool:
-	var t := clamp((z + 178.0) / 383.0, 0.0, 1.0)
-	var river_x := lerp(55.0, -165.0, t) + sin(t * PI * 3.0) * 24.0
+	var t := clamp((z + 356.0) / 766.0, 0.0, 1.0)
+	var river_x := lerp(110.0, -330.0, t) + sin(t * PI * 3.0) * 48.0
 	return Vector2(x - river_x, 0.0).length() < radius
 
 
 func _near_lake(x: float, z: float, radius: float) -> bool:
-	var lake_center := Vector2(118.0, -4.0)
+	var lake_center := Vector2(236.0, -8.0)
 	var point := Vector2(x, z)
 	return (point - lake_center).length() < radius
 
 
 func _in_clearing(x: float, z: float) -> bool:
-	var camp := Vector2(-208.0, 152.0)
-	var research := Vector2(164.0, -122.0)
-	return Vector2(x, z).distance_to(camp) < 19.0 or Vector2(x, z).distance_to(research) < 24.0
+	var camp := Vector2(-416.0, 304.0)
+	var research := Vector2(328.0, -244.0)
+	return Vector2(x, z).distance_to(camp) < 38.0 or Vector2(x, z).distance_to(research) < 48.0
