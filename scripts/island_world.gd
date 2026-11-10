@@ -15,6 +15,10 @@ var _rng := RandomNumberGenerator.new()
 var _height_noise := FastNoiseLite.new()
 var _detail_noise := FastNoiseLite.new()
 var _camera: Camera3D
+var _sun: DirectionalLight3D
+var _world_environment: Environment
+var _sky_material: ProceduralSkyMaterial
+var _day_clock := 0.25
 var _orbit_time := 0.0
 
 var _terrain_material: StandardMaterial3D
@@ -79,6 +83,23 @@ func _process(delta: float) -> void:
 			sin(angle) * distance
 		)
 		_camera.look_at(Vector3(0.0, 8.0, 0.0), Vector3.UP)
+	_advance_day_cycle(delta)
+
+
+func _advance_day_cycle(delta: float) -> void:
+	_day_clock = fposmod(_day_clock + delta * 0.0011, 1.0)
+	var daylight := max(sin(TAU * _day_clock), 0.0)
+	if is_instance_valid(_sun):
+		_sun.rotation_degrees.x = -90.0 - cos(TAU * _day_clock) * 80.0
+		_sun.light_energy = lerp(0.025, 1.22, daylight)
+		_sun.light_color = Color(0.24, 0.34, 0.49).lerp(Color(1.0, 0.89, 0.75), daylight)
+	if _world_environment != null:
+		_world_environment.ambient_light_energy = lerp(0.13, 0.72, daylight)
+		_world_environment.fog_density = lerp(0.0032, 0.0016, daylight)
+	if _sky_material != null:
+		_sky_material.sky_top_color = Color(0.012, 0.024, 0.052).lerp(Color(0.105, 0.19, 0.25), daylight)
+		_sky_material.sky_horizon_color = Color(0.075, 0.10, 0.14).lerp(Color(0.52, 0.59, 0.57), daylight)
+		_sky_material.ground_horizon_color = Color(0.045, 0.06, 0.07).lerp(Color(0.31, 0.37, 0.32), daylight)
 
 
 func _create_materials() -> void:
@@ -161,6 +182,7 @@ func _create_atmosphere() -> void:
 	var environment := Environment.new()
 	var sky := Sky.new()
 	var sky_material := ProceduralSkyMaterial.new()
+	_sky_material = sky_material
 	sky_material.sky_top_color = Color(0.105, 0.19, 0.25)
 	sky_material.sky_horizon_color = Color(0.52, 0.59, 0.57)
 	sky_material.ground_bottom_color = Color(0.075, 0.095, 0.085)
@@ -176,6 +198,7 @@ func _create_atmosphere() -> void:
 	environment.fog_light_color = Color(0.43, 0.51, 0.48)
 	environment.fog_density = 0.0018
 	world.environment = environment
+	_world_environment = environment
 	add_child(world)
 
 	var sun := DirectionalLight3D.new()
@@ -185,6 +208,7 @@ func _create_atmosphere() -> void:
 	sun.light_energy = 1.05
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 230.0
+	_sun = sun
 	add_child(sun)
 
 
@@ -506,7 +530,7 @@ func _scatter_rocks_and_logs() -> void:
 
 func _create_cave_system() -> void:
 	_create_cave_entrance(Vector3(-244.0, _height_at(-244.0, -150.0), -150.0), "NorthernRidgeCave", 1.0)
-	_create_cave_entrance(Vector3(368.0, _height_at(368.0, 96.0), 96.0), "EasternCliffCave", 0.76)
+	_create_cave_entrance(Vector3(-350.0, _height_at(-350.0, 0.0), 0.0), "EasternCliffCave", 0.76)
 
 
 func _create_cave_entrance(location: Vector3, cave_name: String, size: float) -> void:
@@ -909,5 +933,7 @@ func _in_clearing(x: float, z: float) -> bool:
 	var swamp := Vector2(420.0, 310.0)
 	var lookout := Vector2(130.0, -284.0)
 	var bridge := Vector2(-186.0, 217.0)
+	var cave_north := Vector2(-244.0, -150.0)
+	var cave_west := Vector2(-350.0, 0.0)
 	var point := Vector2(x, z)
-	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0 or point.distance_to(lookout) < 25.0 or point.distance_to(bridge) < 24.0
+	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0 or point.distance_to(lookout) < 25.0 or point.distance_to(bridge) < 24.0 or point.distance_to(cave_north) < 34.0 or point.distance_to(cave_west) < 32.0
