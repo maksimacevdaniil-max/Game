@@ -57,6 +57,7 @@ func _ready() -> void:
 	_create_lake()
 	_create_western_tarn()
 	_create_western_tarn_shoreline()
+	_create_western_tarn_grove()
 	_create_river()
 	_scatter_conifer_forest()
 	_scatter_broadleaf_trees()
@@ -1894,3 +1895,83 @@ func _create_western_tarn_shoreline() -> void:
 
 	_add_multimesh("WesternTarnShorePebbles", _rock_mesh, shore_pebbles, _rock_material)
 	_add_multimesh("WesternTarnFallenDriftwood", log_mesh, fallen_logs, log_material)
+
+
+
+func _create_western_tarn_grove() -> void:
+	var birch_trunk_mesh := CylinderMesh.new()
+	birch_trunk_mesh.top_radius = 0.18
+	birch_trunk_mesh.bottom_radius = 0.34
+	birch_trunk_mesh.height = 9.0
+	birch_trunk_mesh.radial_segments = 7
+	var birch_bark := StandardMaterial3D.new()
+	birch_bark.albedo_color = Color(0.56, 0.54, 0.45)
+	birch_bark.roughness = 0.96
+
+	var crown_mesh := SphereMesh.new()
+	crown_mesh.radius = 1.0
+	crown_mesh.height = 2.0
+	crown_mesh.radial_segments = 8
+	crown_mesh.rings = 5
+	var crown_material := _make_pine_material(Color(0.105, 0.19, 0.095))
+	var understory_mesh := CylinderMesh.new()
+	understory_mesh.top_radius = 0.012
+	understory_mesh.bottom_radius = 0.11
+	understory_mesh.height = 0.8
+	understory_mesh.radial_segments = 4
+	var understory_material := _make_pine_material(Color(0.23, 0.29, 0.14))
+
+	var trunks: Array[Transform3D] = []
+	var crowns: Array[Transform3D] = []
+	var secondary_crowns: Array[Transform3D] = []
+	var sedges: Array[Transform3D] = []
+	var attempts := 0
+	while trunks.size() < 34 and attempts < 2600:
+		attempts += 1
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(1.22, 1.72)
+		var x := -300.0 + cos(angle) * 64.0 * radial
+		var z := 180.0 + sin(angle) * 50.0 * radial
+		var ground := _height_at(x, z)
+		if ground < 3.0 or ground > 27.0 or _slope_at(x, z) > 1.15:
+			continue
+		if _near_river(x, z, 24.0) or _in_clearing(x, z):
+			continue
+		var scale := _rng.randf_range(0.82, 1.24)
+		trunks.append(_make_transform(
+			Vector3(x, ground + 4.5 * scale, z),
+			_rng.randf_range(-0.08, 0.08),
+			Vector3.ONE * scale
+		))
+		crowns.append(_make_transform(
+			Vector3(x, ground + 9.1 * scale, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(3.5, 3.0, 3.3) * scale
+		))
+		secondary_crowns.append(_make_transform(
+			Vector3(x + _rng.randf_range(-1.4, 1.4), ground + 10.0 * scale, z + _rng.randf_range(-1.2, 1.2)),
+			_rng.randf_range(0.0, TAU),
+			Vector3(2.2, 2.0, 2.3) * scale
+		))
+
+	for i in range(520):
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.94, 1.3)
+		var x := -300.0 + cos(angle) * 64.0 * radial
+		var z := 180.0 + sin(angle) * 50.0 * radial
+		var ground := _height_at(x, z)
+		if ground <= _western_tarn_water_level() + 0.2 or ground > 20.0:
+			continue
+		if _slope_at(x, z) > 1.5:
+			continue
+		var size := _rng.randf_range(0.65, 1.3)
+		sedges.append(_make_transform(
+			Vector3(x, ground + 0.38 * size, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3.ONE * size
+		))
+
+	_add_multimesh("WesternTarnBirchTrunks", birch_trunk_mesh, trunks, birch_bark)
+	_add_multimesh("WesternTarnBirchCanopies", crown_mesh, crowns, crown_material)
+	_add_multimesh("WesternTarnBirchUpperCanopies", crown_mesh, secondary_crowns, crown_material)
+	_add_multimesh("WesternTarnShoreSedges", understory_mesh, sedges, understory_material)
