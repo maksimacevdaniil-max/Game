@@ -54,6 +54,7 @@ func _ready() -> void:
 	_create_atmosphere()
 	_create_terrain()
 	_create_ocean()
+	_create_coastal_sea_stacks()
 	_create_lake()
 	_create_western_tarn()
 	_create_western_tarn_shoreline()
@@ -2056,3 +2057,43 @@ func _create_riverbank_woodland() -> void:
 	_add_multimesh("RiverbankAlderCanopies", canopy_mesh, crowns, canopy_material)
 	_add_multimesh("RiverbankAlderSideCanopies", canopy_mesh, side_crowns, canopy_material)
 	_add_multimesh("RiverbankSedgeGrass", sedge_mesh, sedges, sedge_material)
+
+
+
+func _create_coastal_sea_stacks() -> void:
+	var stack_cores: Array[Transform3D] = []
+	var stack_caps: Array[Transform3D] = []
+	var submerged_rocks: Array[Transform3D] = []
+	for i in range(9):
+		var angle := TAU * float(i) / 9.0 + 0.16
+		var radial := _rng.randf_range(1.105, 1.14)
+		var x := cos(angle) * ISLAND_RX * radial
+		var z := sin(angle) * ISLAND_RZ * radial
+		var base_size := _rng.randf_range(5.5, 8.5)
+		var base_height := _rng.randf_range(5.0, 7.5)
+		stack_cores.append(_make_transform(
+			Vector3(x, SEA_LEVEL - 0.9, z),
+			angle,
+			Vector3(base_size, base_height, base_size * _rng.randf_range(0.78, 1.12))
+		))
+		var cap_size := base_size * _rng.randf_range(0.48, 0.72)
+		stack_caps.append(_make_transform(
+			Vector3(x + _rng.randf_range(-1.2, 1.2), SEA_LEVEL + base_height * 0.72, z + _rng.randf_range(-1.0, 1.0)),
+			angle + _rng.randf_range(-0.2, 0.2),
+			Vector3(cap_size, base_height * 0.62, cap_size * 0.82)
+		))
+		for j in range(3):
+			var offset_angle := angle + _rng.randf_range(-0.8, 0.8)
+			var offset_distance := base_size * _rng.randf_range(0.65, 1.25)
+			var small_size := _rng.randf_range(1.8, 3.8)
+			var rock_x := x + cos(offset_angle) * offset_distance
+			var rock_z := z + sin(offset_angle) * offset_distance
+			submerged_rocks.append(_make_transform(
+				Vector3(rock_x, SEA_LEVEL - 1.1, rock_z),
+				_rng.randf_range(0.0, TAU),
+				Vector3(small_size, small_size * _rng.randf_range(0.8, 1.5), small_size * 0.85)
+			))
+
+	_add_multimesh("OffshoreSeaStackCores", _rock_mesh, stack_cores, _rock_material)
+	_add_multimesh("OffshoreSeaStackCaps", _rock_mesh, stack_caps, _rock_material)
+	_add_multimesh("SubmergedCoastalReefRocks", _rock_mesh, submerged_rocks, _rock_material)
