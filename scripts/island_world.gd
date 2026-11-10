@@ -69,6 +69,7 @@ func _ready() -> void:
 	_create_beach_tide_pools_and_driftwood()
 	_create_coastal_dune_grass()
 	_create_mountain_streams_and_waterfalls()
+	_create_waterfall_basin_details()
 	_create_stream_bank_gravel()
 	_create_cave_system()
 	_create_coastal_camp()
@@ -2267,3 +2268,70 @@ func _create_coastal_dune_grass() -> void:
 
 	_add_multimesh("CoastalDuneGrassTufts", dune_grass_mesh, dune_tufts, dune_grass_material)
 	_add_multimesh("SaltSprayCoastalShrubs", _bush_mesh, salt_shrubs, salt_shrub_material)
+
+
+
+func _create_waterfall_basin_details() -> void:
+	var basin_center := Vector2(86.0, -253.0)
+	var water_level: float = _height_at(basin_center.x, basin_center.y) + 0.38
+	var basin_rocks: Array[Transform3D] = []
+	var spray_foam: Array[Transform3D] = []
+	var downstream_pebbles: Array[Transform3D] = []
+
+	# A broken granite rim frames the northern waterfall's plunge pool.
+	for i in range(42):
+		var angle: float = TAU * float(i) / 42.0 + _rng.randf_range(-0.035, 0.035)
+		var radius_x: float = _rng.randf_range(10.0, 18.0)
+		var radius_z: float = _rng.randf_range(7.0, 14.0)
+		var x: float = basin_center.x + cos(angle) * radius_x
+		var z: float = basin_center.y + sin(angle) * radius_z
+		var ground: float = _height_at(x, z)
+		if ground < water_level + 0.45 or ground > 54.0:
+			continue
+		var size: float = _rng.randf_range(1.3, 4.2)
+		basin_rocks.append(_make_transform(
+			Vector3(x, ground + size * 0.28, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(1.0, 1.7), size * 0.82, size)
+		))
+
+	# Bright, flattened foam islands sit just above the moving pool surface.
+	for i in range(18):
+		var angle: float = _rng.randf_range(0.0, TAU)
+		var radius: float = _rng.randf_range(1.4, 8.5)
+		var x: float = basin_center.x + cos(angle) * radius
+		var z: float = basin_center.y + sin(angle) * radius * 0.72
+		var size: float = _rng.randf_range(0.45, 1.35)
+		spray_foam.append(_make_transform(
+			Vector3(x, water_level + 0.12, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * 1.8, 0.055, size * 0.75)
+		))
+
+	# Small rounded stones follow the first few metres of the outgoing stream.
+	for i in range(110):
+		var t: float = _rng.randf_range(0.0, 1.0)
+		var stream_z: float = lerpf(-248.0, -218.0, t)
+		var stream_x: float = lerpf(86.0, 64.0, t) + sin(t * PI) * 4.0
+		var side: float = -1.0 if _rng.randf() < 0.5 else 1.0
+		var x: float = stream_x + side * _rng.randf_range(2.8, 6.2)
+		var z: float = stream_z + _rng.randf_range(-1.5, 1.5)
+		var ground: float = _height_at(x, z)
+		if ground < 2.0 or ground > 52.0:
+			continue
+		var size: float = _rng.randf_range(0.25, 0.95)
+		downstream_pebbles.append(_make_transform(
+			Vector3(x, ground + size * 0.25, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * 1.5, size * 0.7, size)
+		))
+
+	var foam_material := StandardMaterial3D.new()
+	foam_material.albedo_color = Color(0.72, 0.86, 0.81, 0.78)
+	foam_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	foam_material.roughness = 0.24
+	foam_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	_add_multimesh("NorthWaterfallGraniteBasinRim", _rock_mesh, basin_rocks, _rock_material)
+	_add_multimesh("NorthWaterfallSprayFoam", _bush_mesh, spray_foam, foam_material)
+	_add_multimesh("NorthWaterfallDownstreamPebbles", _rock_mesh, downstream_pebbles, _rock_material)
