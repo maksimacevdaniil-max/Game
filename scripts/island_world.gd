@@ -70,6 +70,7 @@ func _ready() -> void:
 	_create_player_spawn_marker()
 	_create_swamp_region()
 	_create_swamp_water_channels()
+	_create_swamp_surface_details()
 	_create_biome_groundcover()
 	_create_ravine_boulder_fields()
 	_create_natural_rock_arches()
@@ -1772,3 +1773,55 @@ func _create_swamp_water_channels() -> void:
 			Vector3(size * 1.8, size * 0.6, size)
 		))
 	_add_multimesh("SwampWaterlineStones", _rock_mesh, bank_stones, _rock_material)
+
+
+
+func _create_swamp_surface_details() -> void:
+	var lily_mesh := SphereMesh.new()
+	lily_mesh.radius = 0.72
+	lily_mesh.height = 0.12
+	lily_mesh.radial_segments = 7
+	lily_mesh.rings = 3
+	var lily_material := StandardMaterial3D.new()
+	lily_material.albedo_color = Color(0.13, 0.22, 0.105)
+	lily_material.roughness = 0.82
+	var root_mesh := ConeMesh.new()
+	root_mesh.top_radius = 0.035
+	root_mesh.bottom_radius = 0.19
+	root_mesh.height = 1.0
+	root_mesh.radial_segments = 5
+	var root_material := _make_bark_material(Color(0.14, 0.12, 0.085))
+
+	var lily_pads: Array[Transform3D] = []
+	var cypress_knees: Array[Transform3D] = []
+	var attempts := 0
+	while lily_pads.size() < 110 and attempts < 1800:
+		attempts += 1
+		var x := 420.0 + _rng.randf_range(-104.0, 104.0)
+		var z := 310.0 + _rng.randf_range(-82.0, 82.0)
+		var ground := _height_at(x, z)
+		if ground < 0.0 or ground > 3.6 or _near_river(x, z, 10.0):
+			continue
+		var size := _rng.randf_range(0.65, 1.25)
+		lily_pads.append(_make_transform(
+			Vector3(x, ground + 0.2, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size, 0.16, size * _rng.randf_range(0.75, 1.25))
+		))
+
+	for i in range(125):
+		var x := 420.0 + _rng.randf_range(-112.0, 112.0)
+		var z := 310.0 + _rng.randf_range(-92.0, 92.0)
+		var ground := _height_at(x, z)
+		if ground < 0.5 or ground > 6.0:
+			continue
+		var height := _rng.randf_range(0.55, 1.5)
+		var size := _rng.randf_range(0.7, 1.25)
+		cypress_knees.append(_make_transform(
+			Vector3(x, ground + height * 0.5, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size, height, size)
+		))
+
+	_add_multimesh("SwampFloatingLilyPads", lily_mesh, lily_pads, lily_material)
+	_add_multimesh("SwampCypressRootKnees", root_mesh, cypress_knees, root_material)
