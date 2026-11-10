@@ -59,6 +59,7 @@ func _ready() -> void:
 	_create_cave_system()
 	_create_coastal_camp()
 	_create_plane_wreck()
+	_create_player_spawn_marker()
 	_create_swamp_region()
 	_create_abandoned_research_site()
 	_create_trails()
@@ -618,6 +619,15 @@ func _create_plane_wreck() -> void:
 	_add_box(wreck, Vector3(0.0, 2.8, 10.2), Vector3(0.5, 2.8, 3.8), dark_metal)
 	_add_box(wreck, Vector3(0.0, 2.5, -4.2), Vector3(2.3, 1.4, 0.22), glass)
 	_add_box(wreck, Vector3(0.0, 2.5, -1.4), Vector3(2.3, 1.4, 0.22), glass)
+
+
+
+func _create_player_spawn_marker() -> void:
+	var spawn := Marker3D.new()
+	spawn.name = "PlayerSpawnPoint"
+	spawn.position = Vector3(-490.0, _height_at(-490.0, 220.0) + 1.0, 220.0)
+	spawn.add_to_group("player_spawn")
+	add_child(spawn)
 
 
 func _create_swamp_region() -> void:
