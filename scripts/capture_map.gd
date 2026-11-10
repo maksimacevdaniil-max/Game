@@ -26,10 +26,10 @@ func _capture_map() -> void:
 	var capture_environment := island.get("_world_environment") as Environment
 	if capture_environment != null:
 		capture_environment.fog_enabled = false
-		capture_environment.ambient_light_energy = 0.95
+		capture_environment.ambient_light_energy = 1.25
 	var capture_sun := island.get("_sun") as DirectionalLight3D
 	if capture_sun != null:
-		capture_sun.light_energy = 1.35
+		capture_sun.light_energy = 1.7
 	var capture_sky := island.get("_sky_material") as ProceduralSkyMaterial
 	if capture_sky != null:
 		capture_sky.sky_top_color = Color(0.035, 0.075, 0.12)
@@ -47,9 +47,9 @@ func _capture_map() -> void:
 		return
 
 	camera.current = true
-	camera.fov = 48.0
+	camera.fov = 46.0
 	camera.far = 2200.0
-	camera.position = Vector3(760.0, 980.0, 760.0)
+	camera.position = Vector3(700.0, 1020.0, 700.0)
 	camera.look_at(Vector3(0.0, 6.0, 0.0), Vector3.UP)
 	await process_frame
 	var overview_error := _save_viewport(OVERVIEW_FILE)
@@ -63,8 +63,8 @@ func _capture_map() -> void:
 		var parts := focus_raw.split(",")
 		if parts.size() == 3:
 			var focus := Vector3(parts[0].to_float(), parts[1].to_float(), parts[2].to_float())
-			camera.fov = 50.0
-			camera.position = focus + Vector3(92.0, 72.0, 104.0)
+			camera.fov = 46.0
+			camera.position = focus + Vector3(70.0, 105.0, 80.0)
 			camera.look_at(focus, Vector3.UP)
 			for frame in range(3):
 				await process_frame

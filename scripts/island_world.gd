@@ -82,6 +82,7 @@ func _ready() -> void:
 	_create_natural_rock_arches()
 	_create_highland_meadow_details()
 	_create_cliff_outcrops()
+	_create_northern_ridge_spires()
 	_create_highland_deadwood()
 	_create_abandoned_research_site()
 	_create_trails()
@@ -392,11 +393,12 @@ func _height_at(x: float, z: float) -> float:
 	var lake_basin := 7.4 * exp(-pow((x - 236.0) / 66.0, 2.0) - pow((z + 8.0) / 48.0, 2.0))
 	var central_ridge := 28.0 * exp(-pow((x + 50.0) / 224.0, 2.0) - pow((z + 76.0) / 180.0, 2.0))
 	var north_peak := 34.0 * exp(-pow((x - 130.0) / 156.0, 2.0) - pow((z + 284.0) / 116.0, 2.0))
+	var eastern_peak := 28.0 * exp(-pow((x - 270.0) / 90.0, 2.0) - pow((z + 330.0) / 78.0, 2.0))
 	var west_ridge := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
 	var southern_hills := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var broad_hills: float = maxf(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	var fine_detail := _detail_noise.get_noise_2d(x, z) * 1.35
-	var elevation: float = 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z)
+	var elevation: float = 0.7 + central_ridge + north_peak + eastern_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z)
 	return lerp(SEA_LEVEL - 0.8, elevation, land)
 
 
@@ -448,10 +450,11 @@ func _height_at_raw(x: float, z: float) -> float:
 	var basin := 7.4 * exp(-pow((x - 236.0) / 66.0, 2.0) - pow((z + 8.0) / 48.0, 2.0))
 	var central := 28.0 * exp(-pow((x + 50.0) / 224.0, 2.0) - pow((z + 76.0) / 180.0, 2.0))
 	var north := 34.0 * exp(-pow((x - 130.0) / 156.0, 2.0) - pow((z + 284.0) / 116.0, 2.0))
+	var east := 28.0 * exp(-pow((x - 270.0) / 90.0, 2.0) - pow((z + 330.0) / 78.0, 2.0))
 	var west := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
 	var south := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var hills: float = maxf(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
-	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z), land)
+	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + east + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z), land)
 
 
 
@@ -1747,6 +1750,71 @@ func _create_cliff_outcrops() -> void:
 	_add_multimesh("JaggedMountainCliffFaces", _rock_mesh, cliff_faces, _rock_material)
 	_add_multimesh("CliffBaseTalus", _rock_mesh, talus, _rock_material)
 
+
+
+
+func _create_northern_ridge_spires() -> void:
+	var spire_mesh := CylinderMesh.new()
+	spire_mesh.top_radius = 0.035
+	spire_mesh.bottom_radius = 1.0
+	spire_mesh.height = 1.0
+	spire_mesh.radial_segments = 6
+	var spires: Array[Transform3D] = []
+	var cairn_stones: Array[Transform3D] = []
+	var talus: Array[Transform3D] = []
+	var summit_centers: Array[Vector2] = [
+		Vector2(270.0, -330.0),
+		Vector2(205.0, -370.0),
+		Vector2(326.0, -285.0)
+	]
+
+	for center: Vector2 in summit_centers:
+		var summit_ground: float = _height_at(center.x, center.y)
+		for i in range(6):
+			var angle: float = TAU * float(i) / 6.0 + _rng.randf_range(-0.22, 0.22)
+			var radial: float = _rng.randf_range(5.0, 19.0)
+			var x: float = center.x + cos(angle) * radial
+			var z: float = center.y + sin(angle) * radial
+			var ground: float = _height_at(x, z)
+			if ground < 22.0 or ground > 58.0:
+				continue
+			var spire_height: float = _rng.randf_range(8.0, 16.5)
+			var spire_width: float = _rng.randf_range(1.15, 2.25)
+			var yaw: float = _rng.randf_range(0.0, TAU)
+			var lean: float = _rng.randf_range(-0.16, 0.16)
+			var spire_basis: Basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, lean)
+			spire_basis = spire_basis.scaled(Vector3(spire_width, spire_height, spire_width))
+			spires.append(Transform3D(
+				spire_basis,
+				Vector3(x, ground + spire_height * 0.5, z)
+			))
+
+		# A low cairn marks each high point without introducing a game objective.
+		for layer in range(4):
+			var stone_size: float = 1.15 - float(layer) * 0.19
+			var stone_y: float = summit_ground + 0.45 + float(layer) * 0.68
+			cairn_stones.append(_make_transform(
+				Vector3(center.x, stone_y, center.y),
+				_rng.randf_range(0.0, TAU),
+				Vector3(stone_size * 1.25, stone_size * 0.55, stone_size)
+			))
+
+	for i in range(320):
+		var x: float = 270.0 + _rng.randf_range(-92.0, 92.0)
+		var z: float = -330.0 + _rng.randf_range(-82.0, 82.0)
+		var ground: float = _height_at(x, z)
+		if ground < 16.0 or ground > 55.0 or _slope_at(x, z) > 1.8:
+			continue
+		var size: float = _rng.randf_range(0.45, 2.3)
+		talus.append(_make_transform(
+			Vector3(x, ground + size * 0.26, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(1.0, 1.8), size * 0.72, size)
+		))
+
+	_add_multimesh("NorthernGraniteRidgePinnacles", spire_mesh, spires, _rock_material)
+	_add_multimesh("NorthernSummitTrailCairns", _rock_mesh, cairn_stones, _rock_material)
+	_add_multimesh("NorthernSummitScree", _rock_mesh, talus, _rock_material)
 
 
 func _create_highland_deadwood() -> void:
