@@ -55,6 +55,8 @@ func _ready() -> void:
 	_create_terrain()
 	_create_ocean()
 	_create_lake()
+	_create_western_tarn()
+	_create_western_tarn_shoreline()
 	_create_river()
 	_scatter_conifer_forest()
 	_scatter_broadleaf_trees()
@@ -390,7 +392,7 @@ func _height_at(x: float, z: float) -> float:
 	var southern_hills := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var broad_hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	var fine_detail := _detail_noise.get_noise_2d(x, z) * 1.35
-	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z)
+	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z)
 	return lerp(SEA_LEVEL - 0.8, elevation, land)
 
 
@@ -445,7 +447,7 @@ func _height_at_raw(x: float, z: float) -> float:
 	var west := 18.0 * exp(-pow((x + 350.0) / 124.0, 2.0) - pow((z + 30.0) / 250.0, 2.0))
 	var south := 8.0 * exp(-pow((x - 40.0) / 320.0, 2.0) - pow((z - 300.0) / 132.0, 2.0))
 	var hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
-	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin - _ravine_cut_at(x, z), land)
+	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin - _ravine_cut_at(x, z) - _western_tarn_basin_at(x, z), land)
 
 
 
@@ -1110,9 +1112,10 @@ func _near_river(x: float, z: float, radius: float) -> bool:
 
 
 func _near_lake(x: float, z: float, radius: float) -> bool:
-	var lake_center := Vector2(236.0, -8.0)
+	var hidden_lake_center := Vector2(236.0, -8.0)
+	var western_tarn_center := Vector2(-300.0, 180.0)
 	var point := Vector2(x, z)
-	return (point - lake_center).length() < radius
+	return (point - hidden_lake_center).length() < radius or (point - western_tarn_center).length() < radius
 
 
 func _in_clearing(x: float, z: float) -> bool:
@@ -1825,3 +1828,69 @@ func _create_swamp_surface_details() -> void:
 
 	_add_multimesh("SwampFloatingLilyPads", lily_mesh, lily_pads, lily_material)
 	_add_multimesh("SwampCypressRootKnees", root_mesh, cypress_knees, root_material)
+
+
+
+func _western_tarn_basin_at(x: float, z: float) -> float:
+	return 12.0 * exp(-pow((x + 300.0) / 68.0, 2.0) - pow((z - 180.0) / 52.0, 2.0))
+
+
+func _western_tarn_water_level() -> float:
+	return _height_at(-300.0, 180.0) + 4.0
+
+
+func _create_western_tarn() -> void:
+	var tarn_mesh := PlaneMesh.new()
+	tarn_mesh.size = Vector2(112.0, 88.0)
+	tarn_mesh.subdivide_width = 28
+	tarn_mesh.subdivide_depth = 22
+	var tarn := MeshInstance3D.new()
+	tarn.name = "WesternHighlandTarn"
+	tarn.mesh = tarn_mesh
+	tarn.material_override = _water_material
+	tarn.position = Vector3(-300.0, _western_tarn_water_level(), 180.0)
+	tarn.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(tarn)
+
+
+func _create_western_tarn_shoreline() -> void:
+	var shore_pebbles: Array[Transform3D] = []
+	var fallen_logs: Array[Transform3D] = []
+	var log_mesh := CylinderMesh.new()
+	log_mesh.top_radius = 0.13
+	log_mesh.bottom_radius = 0.22
+	log_mesh.height = 1.0
+	log_mesh.radial_segments = 6
+	var log_material := _make_bark_material(Color(0.19, 0.15, 0.105))
+	var water_level := _western_tarn_water_level()
+
+	for i in range(190):
+		var angle := TAU * float(i) / 190.0 + _rng.randf_range(-0.025, 0.025)
+		var radial := _rng.randf_range(0.96, 1.22)
+		var x := -300.0 + cos(angle) * 54.0 * radial
+		var z := 180.0 + sin(angle) * 42.0 * radial
+		var ground := _height_at(x, z)
+		if ground <= water_level + 0.35 or ground > 19.0:
+			continue
+		var size := _rng.randf_range(0.35, 1.35)
+		shore_pebbles.append(_make_transform(
+			Vector3(x, ground + size * 0.28, z),
+			_rng.randf_range(0.0, TAU),
+			Vector3(size * _rng.randf_range(1.0, 1.8), size * 0.62, size)
+		))
+
+	for i in range(18):
+		var angle := _rng.randf_range(0.0, TAU)
+		var radial := _rng.randf_range(0.88, 1.14)
+		var x := -300.0 + cos(angle) * 52.0 * radial
+		var z := 180.0 + sin(angle) * 40.0 * radial
+		var ground := _height_at(x, z)
+		if ground <= water_level + 0.45 or ground > 20.0:
+			continue
+		var length := _rng.randf_range(2.5, 6.5)
+		var log_basis := Basis(Vector3.UP, angle) * Basis(Vector3.RIGHT, PI * 0.5)
+		log_basis = log_basis.scaled(Vector3(0.22, length, 0.22))
+		fallen_logs.append(Transform3D(log_basis, Vector3(x, ground + 0.2, z)))
+
+	_add_multimesh("WesternTarnShorePebbles", _rock_mesh, shore_pebbles, _rock_material)
+	_add_multimesh("WesternTarnFallenDriftwood", log_mesh, fallen_logs, log_material)
