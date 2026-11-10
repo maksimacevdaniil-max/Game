@@ -40,7 +40,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
-          MAP_CAPTURE_FOCUS: "-300,12,180"
+          MAP_CAPTURE_FOCUS: "130,36,-284"
         run: |
           xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://scripts/capture_map.gd
           test -s previews/island-overview.jpg
