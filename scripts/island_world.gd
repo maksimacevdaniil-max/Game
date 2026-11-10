@@ -212,15 +212,17 @@ func _make_bark_material(tint: Color) -> ShaderMaterial:
 shader_type spatial;
 uniform vec4 bark_tint : source_color = vec4(0.22, 0.16, 0.12, 1.0);
 varying vec3 local_position;
+varying vec3 object_origin;
 float bark_noise(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 void vertex() {
 	local_position = VERTEX;
+	object_origin = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 }
 void fragment() {
 	float grooves = sin(local_position.y * 21.0 + sin(local_position.x * 8.0 + local_position.z * 7.0) * 1.8);
-	float flecks = bark_noise(floor(local_position.xz * 8.0));
+	float flecks = bark_noise(floor((local_position.xz + object_origin.xz) * 8.0));
 	float grain = 0.82 + grooves * 0.075 + flecks * 0.12;
 	ALBEDO = bark_tint.rgb * grain;
 	ROUGHNESS = 0.99;
@@ -238,6 +240,7 @@ func _make_rock_material(tint: Color) -> ShaderMaterial:
 shader_type spatial;
 uniform vec4 stone_tint : source_color = vec4(0.27, 0.29, 0.28, 1.0);
 varying vec3 local_position;
+varying vec3 object_origin;
 float stone_hash(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1));
 	p *= 17.0;
@@ -245,10 +248,11 @@ float stone_hash(vec3 p) {
 }
 void vertex() {
 	local_position = VERTEX;
+	object_origin = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 }
 void fragment() {
-	float broad = stone_hash(floor(local_position * 2.5));
-	float fine = stone_hash(floor(local_position * 14.0));
+	float broad = stone_hash(floor((local_position + object_origin) * 2.5));
+	float fine = stone_hash(floor((local_position + object_origin) * 14.0));
 	float striation = sin(local_position.y * 5.0 + local_position.x * 2.0) * 0.045;
 	float variation = 0.78 + broad * 0.2 + fine * 0.12 + striation;
 	ALBEDO = stone_tint.rgb * variation;
