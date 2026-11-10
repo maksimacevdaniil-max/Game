@@ -403,11 +403,20 @@ func _terrain_color(x: float, z: float, height: float, slope: float) -> Color:
 	if height > 31.0:
 		color = color.lerp(high_stone, clamp((height - 31.0) / 15.0, 0.0, 0.75))
 	var moss_factor := _detail_noise.get_noise_2d(x * 2.0, z * 2.0) * 0.055
-	return Color(
+	var final_color := Color(
 		clamp(color.r + moss_factor, 0.0, 1.0),
 		clamp(color.g + moss_factor, 0.0, 1.0),
 		clamp(color.b + moss_factor, 0.0, 1.0)
 	)
+	var swamp_distance := Vector2(x - 420.0, z - 310.0).length()
+	var wetland_mask := (1.0 - smoothstep(72.0, 178.0, swamp_distance)) * (1.0 - smoothstep(5.0, 11.0, height))
+	var wet_mud := Color(0.075, 0.105, 0.075)
+	final_color = final_color.lerp(wet_mud, wetland_mask * 0.78)
+	var ravine_center_x := -82.0 + sin(z * 0.0085) * 52.0
+	var ravine_distance := abs(x - ravine_center_x)
+	var ravine_mask := (1.0 - smoothstep(15.0, 48.0, ravine_distance)) * (1.0 - smoothstep(18.0, 34.0, height))
+	final_color = final_color.lerp(Color(0.22, 0.235, 0.22), ravine_mask * 0.62)
+	return final_color
 
 
 func _slope_at(x: float, z: float) -> float:
