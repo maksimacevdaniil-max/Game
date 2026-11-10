@@ -172,9 +172,6 @@ func _create_atmosphere() -> void:
 	environment.fog_enabled = true
 	environment.fog_light_color = Color(0.43, 0.51, 0.48)
 	environment.fog_density = 0.0018
-	environment.volumetric_fog_enabled = true
-	environment.volumetric_fog_density = 0.012
-	environment.volumetric_fog_length = 180.0
 	world.environment = environment
 	add_child(world)
 
@@ -230,13 +227,14 @@ func _height_at(x: float, z: float) -> float:
 	var coast := radial + coast_noise
 	var land := 1.0 - smoothstep(0.91, 1.055, coast)
 
+	var lake_basin := 7.4 * exp(-pow((x - 118.0) / 33.0, 2.0) - pow((z + 4.0) / 24.0, 2.0))
 	var central_ridge := 28.0 * exp(-pow((x + 25.0) / 112.0, 2.0) - pow((z + 38.0) / 90.0, 2.0))
 	var north_peak := 34.0 * exp(-pow((x - 65.0) / 78.0, 2.0) - pow((z + 142.0) / 58.0, 2.0))
 	var west_ridge := 18.0 * exp(-pow((x + 175.0) / 62.0, 2.0) - pow((z + 15.0) / 125.0, 2.0))
 	var southern_hills := 8.0 * exp(-pow((x - 20.0) / 160.0, 2.0) - pow((z - 150.0) / 66.0, 2.0))
 	var broad_hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
 	var fine_detail := _detail_noise.get_noise_2d(x, z) * 1.35
-	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail
+	var elevation := 0.7 + central_ridge + north_peak + west_ridge + southern_hills + broad_hills + fine_detail - lake_basin
 	return lerp(SEA_LEVEL - 0.8, elevation, land)
 
 
@@ -278,12 +276,13 @@ func _height_at_raw(x: float, z: float) -> float:
 	var radial := sqrt(nx * nx + nz * nz)
 	var coast := radial + _height_noise.get_noise_2d(x * 0.52, z * 0.52) * 0.027
 	var land := 1.0 - smoothstep(0.91, 1.055, coast)
+	var basin := 7.4 * exp(-pow((x - 118.0) / 33.0, 2.0) - pow((z + 4.0) / 24.0, 2.0))
 	var central := 28.0 * exp(-pow((x + 25.0) / 112.0, 2.0) - pow((z + 38.0) / 90.0, 2.0))
 	var north := 34.0 * exp(-pow((x - 65.0) / 78.0, 2.0) - pow((z + 142.0) / 58.0, 2.0))
 	var west := 18.0 * exp(-pow((x + 175.0) / 62.0, 2.0) - pow((z + 15.0) / 125.0, 2.0))
 	var south := 8.0 * exp(-pow((x - 20.0) / 160.0, 2.0) - pow((z - 150.0) / 66.0, 2.0))
 	var hills := max(_height_noise.get_noise_2d(x, z), -0.35) * 10.0
-	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35, land)
+	return lerp(SEA_LEVEL - 0.8, 0.7 + central + north + west + south + hills + _detail_noise.get_noise_2d(x, z) * 1.35 - basin, land)
 
 
 func _create_ocean() -> void:
@@ -309,7 +308,7 @@ func _create_lake() -> void:
 	lake.name = "HiddenForestLake"
 	lake.mesh = lake_mesh
 	lake.material_override = _water_material
-	lake.position = Vector3(118.0, 4.7, -4.0)
+	lake.position = Vector3(118.0, _height_at(118.0, -4.0) + 0.35, -4.0)
 	lake.rotation_degrees.y = -18.0
 	lake.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(lake)
@@ -665,15 +664,29 @@ func _create_swamp_region() -> void:
 		dead_tree.rotation_degrees.x = _rng.randf_range(-10.0, 10.0)
 		swamp.add_child(dead_tree)
 
-	var swamp_fog := FogVolume.new()
-	swamp_fog.name = "LowSwampMist"
-	var fog_shape := SphereShape3D.new()
-	fog_shape.radius = 42.0
-	swamp_fog.shape = fog_shape
-	swamp_fog.material = FogMaterial.new()
-	swamp_fog.material.density = 0.025
-	swamp_fog.position = Vector3(center.x, _height_at(center.x, center.y) + 3.0, center.y)
-	swamp.add_child(swamp_fog)
+	var mist_shader := Shader.new()
+	mist_shader.code = """
+shader_type spatial;
+render_mode unshaded, blend_mix, cull_disabled, depth_draw_never;
+void fragment() {
+	float edge_x = smoothstep(0.0, 0.2, UV.x) * (1.0 - smoothstep(0.8, 1.0, UV.x));
+	float edge_y = smoothstep(0.0, 0.25, UV.y) * (1.0 - smoothstep(0.75, 1.0, UV.y));
+	float drift = 0.75 + 0.25 * sin(TIME * 0.35 + UV.x * 8.0);
+	ALBEDO = vec3(0.48, 0.55, 0.47);
+	ALPHA = edge_x * edge_y * drift * 0.17;
+}
+"""
+	var mist_material := ShaderMaterial.new()
+	mist_material.shader = mist_shader
+	var mist_mesh := PlaneMesh.new()
+	mist_mesh.size = Vector2(94.0, 76.0)
+	var mist := MeshInstance3D.new()
+	mist.name = "LowSwampMist"
+	mist.mesh = mist_mesh
+	mist.material_override = mist_material
+	mist.position = Vector3(center.x, _height_at(center.x, center.y) + 1.8, center.y)
+	mist.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	swamp.add_child(mist)
 
 func _create_abandoned_research_site() -> void:
 	var site := Node3D.new()
@@ -781,7 +794,7 @@ func _add_multimesh(label: String, mesh: Mesh, transforms: Array[Transform3D], m
 	instance.name = label
 	instance.multimesh = multimesh
 	instance.material_override = material
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
 
 
