@@ -73,6 +73,7 @@ func _ready() -> void:
 	_create_ravine_boulder_fields()
 	_create_natural_rock_arches()
 	_create_highland_meadow_details()
+	_create_cliff_outcrops()
 	_create_abandoned_research_site()
 	_create_trails()
 	_create_river_bridge()
@@ -1639,3 +1640,42 @@ func _create_stream_bank_gravel() -> void:
 					))
 
 	_add_multimesh("MountainStreamBankGravel", _rock_mesh, gravel, _rock_material)
+
+
+
+func _create_cliff_outcrops() -> void:
+	var cliff_faces: Array[Transform3D] = []
+	var talus: Array[Transform3D] = []
+	var attempts := 0
+	while cliff_faces.size() < 360 and attempts < 7200:
+		attempts += 1
+		var x := _rng.randf_range(-ISLAND_RX * 0.91, ISLAND_RX * 0.91)
+		var z := _rng.randf_range(-ISLAND_RZ * 0.91, ISLAND_RZ * 0.91)
+		var ground := _height_at(x, z)
+		var slope := _slope_at(x, z)
+		if ground < 9.0 or ground > 58.0 or slope < 1.25:
+			continue
+		if _near_river(x, z, 9.0) or _near_lake(x, z, 20.0) or _in_clearing(x, z):
+			continue
+		var size := _rng.randf_range(2.2, 7.8)
+		var dx := _height_at(x + 3.0, z) - _height_at(x - 3.0, z)
+		var dz := _height_at(x, z + 3.0) - _height_at(x, z - 3.0)
+		var face_angle := atan2(dz, dx) + PI * 0.5
+		cliff_faces.append(_make_transform(
+			Vector3(x, ground + size * 0.42, z),
+			face_angle,
+			Vector3(size * _rng.randf_range(1.0, 2.2), size * _rng.randf_range(0.8, 1.5), size * 0.62)
+		))
+		if _rng.randf() < 0.7:
+			for j in range(_rng.randi_range(1, 3)):
+				var offset_x := _rng.randf_range(-size * 1.6, size * 1.6)
+				var offset_z := _rng.randf_range(-size * 1.6, size * 1.6)
+				var debris_size := _rng.randf_range(0.5, 1.8)
+				talus.append(_make_transform(
+					Vector3(x + offset_x, _height_at(x + offset_x, z + offset_z) + debris_size * 0.28, z + offset_z),
+					_rng.randf_range(0.0, TAU),
+					Vector3(debris_size * 1.6, debris_size * 0.8, debris_size)
+				))
+
+	_add_multimesh("JaggedMountainCliffFaces", _rock_mesh, cliff_faces, _rock_material)
+	_add_multimesh("CliffBaseTalus", _rock_mesh, talus, _rock_material)
