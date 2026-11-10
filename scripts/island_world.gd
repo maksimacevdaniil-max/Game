@@ -63,6 +63,7 @@ func _ready() -> void:
 	_create_coastal_and_mountain_details()
 	_create_beach_tide_pools_and_driftwood()
 	_create_mountain_streams_and_waterfalls()
+	_create_stream_bank_gravel()
 	_create_cave_system()
 	_create_coastal_camp()
 	_create_plane_wreck()
@@ -1593,3 +1594,48 @@ func _create_highland_meadow_details() -> void:
 	_add_multimesh("HighlandWhiteWildflowers", flower_mesh, white_flowers, flower_white)
 	_add_multimesh("HighlandPurpleWildflowers", flower_mesh, purple_flowers, flower_purple)
 	_add_multimesh("AlpineMeadowGrassTufts", grass_mesh, grass_tufts, meadow_grass)
+
+
+
+func _create_stream_bank_gravel() -> void:
+	var gravel: Array[Transform3D] = []
+	var routes := [
+		PackedVector3Array([
+			Vector3(76.0, 0.0, -390.0),
+			Vector3(94.0, 0.0, -340.0),
+			Vector3(72.0, 0.0, -300.0),
+			Vector3(86.0, 0.0, -258.0),
+			Vector3(64.0, 0.0, -218.0)
+		]),
+		PackedVector3Array([
+			Vector3(-258.0, 0.0, -212.0),
+			Vector3(-218.0, 0.0, -178.0),
+			Vector3(-176.0, 0.0, -142.0),
+			Vector3(-132.0, 0.0, -112.0),
+			Vector3(-88.0, 0.0, -78.0)
+		])
+	]
+	for route in routes:
+		for segment in range(route.size() - 1):
+			var start := route[segment]
+			var finish := route[segment + 1]
+			var direction := Vector2(finish.x - start.x, finish.z - start.z).normalized()
+			var side := Vector2(-direction.y, direction.x)
+			for step in range(32):
+				var t := (float(step) + _rng.randf()) / 32.0
+				var center := start.lerp(finish, t)
+				for bank_side in [-1.0, 1.0]:
+					var offset := _rng.randf_range(2.0, 6.5) * bank_side
+					var x := center.x + side.x * offset
+					var z := center.z + side.y * offset
+					var ground := _height_at(x, z)
+					if ground < 1.0 or ground > 54.0:
+						continue
+					var size := _rng.randf_range(0.12, 0.52)
+					gravel.append(_make_transform(
+						Vector3(x, ground + size * 0.3, z),
+						_rng.randf_range(0.0, TAU),
+						Vector3(size * _rng.randf_range(1.0, 2.0), size * 0.6, size)
+					))
+
+	_add_multimesh("MountainStreamBankGravel", _rock_mesh, gravel, _rock_material)
