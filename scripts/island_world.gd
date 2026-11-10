@@ -1591,9 +1591,9 @@ func _create_natural_rock_arches() -> void:
 		var stone_count := 13
 		for i in range(stone_count):
 			var angle := PI * float(i) / float(stone_count - 1)
-			var x := center.x + cos(angle) * span
-			var y := ground + 1.0 + sin(angle) * height
-			var z := center.y + sin(angle) * 2.4
+			var x: float = center.x + cos(angle) * span
+			var y: float = ground + 1.0 + sin(angle) * height
+			var z: float = center.y + sin(angle) * 2.4
 			var size := _rng.randf_range(2.4, 4.8)
 			var scale := Vector3(size * 0.72, size * 1.25, size * 0.8)
 			arch_stones.append(_make_transform(
@@ -1602,7 +1602,7 @@ func _create_natural_rock_arches() -> void:
 				scale
 			))
 		for side in [-1.0, 1.0]:
-			var pillar_x := center.x + side * span
+			var pillar_x: float = center.x + side * span
 			var pillar_ground := _height_at(pillar_x, center.y)
 			var pillar_size := _rng.randf_range(3.0, 5.0)
 			standing_stones.append(_make_transform(
