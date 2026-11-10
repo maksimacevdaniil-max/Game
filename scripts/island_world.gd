@@ -301,7 +301,7 @@ func _create_ocean() -> void:
 
 func _create_lake() -> void:
 	var lake_mesh := PlaneMesh.new()
-	lake_mesh.size = Vector2(48.0, 34.0)
+	lake_mesh.size = Vector2(96.0, 68.0)
 	lake_mesh.subdivide_width = 24
 	lake_mesh.subdivide_depth = 18
 	var lake := MeshInstance3D.new()
@@ -388,7 +388,7 @@ func _scatter_conifer_forest() -> void:
 	var top: Array[Transform3D] = []
 
 	var attempts := 0
-	while trunks.size() < 3500 and attempts < 23000:
+	while trunks.size() < 8500 and attempts < 55000:
 		attempts += 1
 		var angle := _rng.randf_range(0.0, TAU)
 		var radius := sqrt(_rng.randf_range(0.035, 0.91))
@@ -435,7 +435,7 @@ func _scatter_broadleaf_trees() -> void:
 	var trunks: Array[Transform3D] = []
 	var crowns: Array[Transform3D] = []
 	var attempts := 0
-	while crowns.size() < 460 and attempts < 4400:
+	while crowns.size() < 900 and attempts < 8500:
 		attempts += 1
 		var x := _rng.randf_range(-540.0, 540.0)
 		var z := _rng.randf_range(-450.0, 450.0)
@@ -455,7 +455,7 @@ func _scatter_understory() -> void:
 	var bushes: Array[Transform3D] = []
 	var grass: Array[Transform3D] = []
 	var attempts := 0
-	while bushes.size() < 1500 and attempts < 8400:
+	while bushes.size() < 2600 and attempts < 14500:
 		attempts += 1
 		var x := _rng.randf_range(-580.0, 580.0)
 		var z := _rng.randf_range(-490.0, 490.0)
@@ -679,7 +679,7 @@ void fragment() {
 	var mist_material := ShaderMaterial.new()
 	mist_material.shader = mist_shader
 	var mist_mesh := PlaneMesh.new()
-	mist_mesh.size = Vector2(94.0, 76.0)
+	mist_mesh.size = Vector2(188.0, 152.0)
 	var mist := MeshInstance3D.new()
 	mist.name = "LowSwampMist"
 	mist.mesh = mist_mesh
@@ -829,4 +829,7 @@ func _near_lake(x: float, z: float, radius: float) -> bool:
 func _in_clearing(x: float, z: float) -> bool:
 	var camp := Vector2(-416.0, 304.0)
 	var research := Vector2(328.0, -244.0)
-	return Vector2(x, z).distance_to(camp) < 38.0 or Vector2(x, z).distance_to(research) < 48.0
+	var crash_site := Vector2(-500.0, 192.0)
+	var swamp := Vector2(420.0, 310.0)
+	var point := Vector2(x, z)
+	return point.distance_to(camp) < 38.0 or point.distance_to(research) < 48.0 or point.distance_to(crash_site) < 58.0 or point.distance_to(swamp) < 100.0
